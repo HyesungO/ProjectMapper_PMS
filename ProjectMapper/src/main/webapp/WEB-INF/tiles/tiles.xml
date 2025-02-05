@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd" >
+<tiles-definitions>
+
+
+  <definition name= "abstracParent6" template="/WEB-INF/views/indexthemeLayout.jsp">
+  	<put-attribute name="preScript" value ="/WEB-INF/includee/preScript.jsp"/>
+  	<put-attribute name="indexheader" value="/WEB-INF/includee/indexHeader.jsp"/>
+  	<put-attribute name="postScript" value="/WEB-INF/includee/postScript.jsp"/>		
+  	<put-attribute name="footer" value="/WEB-INF/includee/footer.jsp"/>
+  </definition>
+
+ 
+  <definition name ="index" extends="abstracParent6">
+  	<put-attribute name="content" value="/WEB-INF/views/index.jsp" />
+  </definition>
+	<!-- ======================================================================= -->
+
+
+
+  <definition name = "abstracParent" template="/WEB-INF/views/themeLayout.jsp">
+  	<put-attribute name="preScript" value ="/WEB-INF/includee/preScript.jsp"/>
+  	<put-attribute name="header" value="/WEB-INF/includee/wlecome-header.jsp"/>
+  	<put-attribute name="postScript" value="/WEB-INF/includee/postScript.jsp"/>		
+  </definition>
+
+
+<!-- 	2 depth logical view name -->
+<!--   <definition name="user/*" extends="abstracParent" > -->
+<!--   	<put-attribute name="content" value="/WEB-INF/views/user/{1}.jsp"/>	 -->
+<!--   </definition> -->
+<!-- 	3 depth logical view name -->
+  <definition name="user/user/*" extends="abstracParent" >
+  	<put-attribute name="content" value="/WEB-INF/views/user/user/{1}.jsp"/>
+  </definition>
+<!-- Resume 관련 설정 추가 -->
+  <definition name="user/resume/*" extends="abstracParent2">
+    <put-attribute name="sidebar_mypage" value="/WEB-INF/includee/mypage-sidebar.jsp"/>
+    <put-attribute name="content" value="/WEB-INF/views/user/resume/{1}.jsp"/>
+  </definition>
+<!--   리뷰 관련 설정 추가 -->
+  <definition name="projects/review/*" extends="abstracParent2">
+    <put-attribute name="sidebar_mypage" value="/WEB-INF/includee/mypage-sidebar.jsp"/>
+    <put-attribute name="content" value="/WEB-INF/views/projects/review/{1}.jsp"/>
+  </definition>
+  
+
+
+
+<!-- ======================================================================= -->
+
+  
+<!--  레이아웃2  -->
+  <definition name = "abstracParent2" template="/WEB-INF/views/themeLayout2.jsp">
+  	<put-attribute name="preScript" value ="/WEB-INF/includee/preScript.jsp"/>
+  	<put-attribute name="header" value="/WEB-INF/includee/header.jsp"/>
+  	<put-attribute name="nav-sidebar" value="/WEB-INF/includee/nav-sidebar.jsp"/>
+  	<put-attribute name="postScript" value="/WEB-INF/includee/postScript.jsp"/>		
+  	<put-attribute name="footer" value="/WEB-INF/includee/footer.jsp"/>		
+  </definition>
+  
+  
+<!-- 	2 depth logical view name -->
+  <definition name="*/mypage" extends="abstracParent2" >
+    <put-attribute name="sidebar_mypage" value="/WEB-INF/includee/mypage-sidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/{1}/mypage.jsp"/>	
+  </definition> 
+  <definition name="*/mypage/*" extends="abstracParent2" >
+    <put-attribute name="sidebar_mypage" value="/WEB-INF/includee/mypage-sidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/{1}/mypage/{2}.jsp"/>	
+  </definition>
+  
+  
+  <!-- ======================================================================= -->
+   <!--  레이아웃5 아웃소싱 부분  -->
+  <definition name = "abstracParent5" template="/WEB-INF/views/themeLayout5.jsp">
+  	<put-attribute name="preScript" value ="/WEB-INF/includee/preScript.jsp"/>
+  	<put-attribute name="header" value="/WEB-INF/includee/header.jsp"/>
+
+  	<put-attribute name="postScript" value="/WEB-INF/includee/postScript.jsp"/>		
+  	<put-attribute name="footer" value="/WEB-INF/includee/footer.jsp"/>		
+  </definition>
+  
+   <definition name="projects/projectRecruits/*" extends="abstracParent5" >
+  	<put-attribute name="content" value="/WEB-INF/views/projects/projectRecruits/{1}.jsp"/>	
+  </definition>
+  
+   <definition name="projects/projectRecruits/*/*" extends="abstracParent5" >
+  	<put-attribute name="content" value="/WEB-INF/views/projects/projectRecruits/{1}/{2}.jsp"/>	
+  </definition>
+ 
+ 
+ <!-- ======================================================================= -->
+  
+  
+  
+  
+  
+  <!--  레이아웃3  --> 
+  <definition name = "abstracParent3" template="/WEB-INF/views/themeLayout3.jsp">
+  	<put-attribute name="preScript" value ="/WEB-INF/includee/preScript.jsp"/>
+  	<put-attribute name="header" value="/WEB-INF/includee/header.jsp"/>
+  	<put-attribute name="nav-sidebar" value="/WEB-INF/includee/nav-sidebar.jsp"/>
+  	<put-attribute name="postScript" value="/WEB-INF/includee/postScript.jsp"/>		
+  	<put-attribute name="footer" value="/WEB-INF/includee/footer.jsp"/>		
+  </definition>
+
+  
+<!-- 	2 depth logical view name -->
+  <definition name="projects/*" extends="abstracParent3" >
+    <put-attribute name="sidebar" value="/WEB-INF/includee/sidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/projects/{1}.jsp"/>	
+  </definition>
+<!-- 	3 depth logical view name -->
+  <definition name="projects/*/*" extends="abstracParent3" >
+    <put-attribute name="sidebar" value="/WEB-INF/includee/sidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/projects/{1}/{2}.jsp"/>
+  </definition>
+ 
+
+ <!-- ======================================================================= -->
+
+ 
+  
+  
+<!--   채팅 페이지관련 타일즈 -->
+<!-- 	2 depth logical view name -->
+  <definition name="chat/*" extends="abstracParent3" >
+    <put-attribute name="sidebar" value="/WEB-INF/includee/sidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/chat/{1}.jsp"/>	
+  </definition>
+  
+  
+<!-- 	3 depth logical view name -->
+  <definition name="chat/*/*" extends="abstracParent3" >
+    <put-attribute name="sidebar" value="/WEB-INF/includee/sidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/chat/{1}/{2}.jsp"/>
+  </definition>
+
+
+<!-- 	3 depth logical view name -->
+  <definition name="user/*/*" extends="abstracParent3" >
+    <put-attribute name="sidebar" value="/WEB-INF/includee/sidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/user/{1}/{2}.jsp"/>
+  </definition>
+
+
+
+<!-- ======================================================================= -->
+
+
+
+
+
+   <!--  레이아웃4  --> 
+  <definition name = "abstracParent7" template="/WEB-INF/views/themeLayout6.jsp">
+  	<put-attribute name="preScript" value ="/WEB-INF/includee/preScript.jsp"/>
+  	<put-attribute name="header" value="/WEB-INF/includee/header.jsp"/>
+  	<put-attribute name="nav-sidebar" value="/WEB-INF/includee/nav-sidebar.jsp"/>
+  	<put-attribute name="postScript" value="/WEB-INF/includee/postScript.jsp"/>		
+  	<put-attribute name="footer" value="/WEB-INF/includee/footer.jsp"/>		
+  </definition>
+
+<!-- 	3 depth logical view name -->
+<!-- 	시스템(관리자) -->
+  <definition name="system/*" extends="abstracParent7" >
+    <put-attribute name="systemSidebar" value="/WEB-INF/includee/systemSidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/system/{1}.jsp"/>
+  </definition>
+  <definition name="system/*/*" extends="abstracParent7" >
+    <put-attribute name="systemSidebar" value="/WEB-INF/includee/systemSidebar.jsp"/>
+  	<put-attribute name="content" value="/WEB-INF/views/system/{1}/{2}.jsp"/>
+  </definition>
+ 
+</tiles-definitions>

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.project.mapper.ProjectMapper">
+	
+	<sql id="projectColumns">
+		PJ_ID,
+	    USER_ID,
+	    PJ_NAME,
+	    PJ_DESCRIPTION,
+	    PJ_PROFILE_AFI,
+	    PJ_ST_CODE,
+	    PJ_CREATED_DT,
+	    PJ_END_DT,
+	    PJ_CATE_ID,
+	    PJ_TYPE_CODE
+	    ,PJ_PROGRESS
+	</sql>
+	
+	<select id="selectTotalBoard" resultType="int">
+		SELECT COUNT(*)
+		FROM PROJECT
+		WHERE PJ_TYPE_CODE = 'P0201'
+        AND PJ_ST_CODE !=  'P0403'
+        <if test="paging.projectvo.userId != null and paging.projectvo.userId != ''">
+            AND USER_ID LIKE '%${paging.projectvo.userId}%'
+        </if>
+        <if test="paging.projectvo.pjName != null and paging.projectvo.pjName != ''">
+            AND PJ_NAME LIKE '%${paging.projectvo.pjName}%'
+        </if>
+        <if test="paging.projectvo.pjDescription != null and paging.projectvo.pjDescription != ''">
+            AND PJ_DESCRIPTION LIKE '%${paging.projectvo.pjDescription}%'
+        </if>
+        <if test="paging.projectvo.pjCateId != null and paging.projectvo.pjCateId != ''">
+            AND PJ_CATE_ID = #{paging.projectvo.pjCateId}
+        </if>
+	</select>
+	
+	<select id="selectTotalmyproject" resultType="int">
+		SELECT COUNT(*)
+		FROM PROJECT_MEMBER
+		WHERE USER_ID = #{username}
+	</select>
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectVO" id="myprojectMap" autoMapping="true">
+		<id property="pjId" column="PJ_ID" />
+		<result property="pjProfileAfi" column="PJ_PROFILE_AFI" />
+		<association property="atchFile" column="PJ_PROFILE_AFI"
+			select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+			
+		<association property="pjId" javaType="kr.or.ddit.projects.vo.ProjectVO"></association>
+	</resultMap>
+	<resultMap type="kr.or.ddit.projects.vo.ProjectVO" id="myprojectListMap" autoMapping="true">
+		<id property="pjId" column="PJ_ID" />
+		<result property="pjProfileAfi" column="PJ_PROFILE_AFI" />
+		<association property="atchFile" column="PJ_PROFILE_AFI"
+			select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+			
+		<association property="pjId" javaType="kr.or.ddit.projects.vo.ProjectVO"></association>
+		<association property="uservo" javaType="UsersVO" autoMapping="true" />
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectVO" id="projectMap" autoMapping="true">
+		<id property="pjId" column="PJ_ID" />
+		<result property="pjProfileAfi" column="PJ_PROFILE_AFI" />
+		<association property="atchFile" column="PJ_PROFILE_AFI" select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+		<collection property="taskBoardList" ofType="kr.or.ddit.projects.vo.TaskBoardVO" autoMapping="true"/>
+	</resultMap>
+	
+	
+<!-- 	나의 프로젝트를 리스트로 조회하는 쿼리 -->
+	<select id="selectMyProjectList" resultMap="projectMap">
+		SELECT 
+		    PJ_ID,
+		    USER_ID,
+		    PJ_NAME
+		FROM PROJECT
+		
+	</select>
+	
+<!-- 	나의 프로젝트를 리스트로 조회하는 쿼리(페이징,첨부파일) -->
+	<select id="selectMineList" resultMap="myprojectListMap">
+	    SELECT *
+	    FROM (
+	        SELECT ROWNUM AS RNUM, B.*
+	        FROM (
+	            SELECT 
+	                B.*
+	                , C.USER_NAME
+	            FROM PROJECT_MEMBER A
+	            INNER JOIN PROJECT B ON (A.PJ_ID = B.PJ_ID)
+	            INNER JOIN USERS C ON (A.USER_ID = C.USER_ID)
+	            WHERE A.USER_ID = #{username}
+	            AND B.PJ_ST_CODE != 'P0403'
+	            <if test="paging.projectvo.pjName != null and paging.projectvo.pjName != ''">
+		            AND B.PJ_NAME LIKE '%${paging.projectvo.pjName}%'
+		        </if>
+		        <if test="paging.projectvo.pjDescription != null and paging.projectvo.pjDescription != ''">
+		            AND B.PJ_DESCRIPTION LIKE '%${paging.projectvo.pjDescription}%'
+		        </if>
+		        <if test="paging.projectvo.pjCateId != null and paging.projectvo.pjCateId != ''">
+		            AND B.PJ_CATE_ID = #{paging.projectvo.pjCateId}
+		        </if>
+	           
+	        ) B
+	    )
+	    <where>
+	        <if test="paging != null">
+	            <![CDATA[
+	            RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+	            ]]>
+	        </if>
+	    </where>
+	</select>
+	
+<!-- 	모든 프로젝트 리스트를 조회하는쿼리 -->
+<select id="selectProjectList" resultMap="projectMap">
+    SELECT 
+        A.PJ_ID,
+        A.USER_ID,
+        A.PJ_NAME,
+        A.PJ_DESCRIPTION,
+        A.PJ_PROFILE_AFI,
+        A.PJ_ST_CODE,
+        A.PJ_CREATED_DT,
+        A.PJ_END_DT,
+        A.PJ_TYPE_CODE,
+        A.PJ_CATE_ID,
+        A.PJ_PROGRESS,
+        A.PJ_VIEW_COUNT
+    FROM (
+        SELECT 
+            ROWNUM AS RNUM,
+            P.PJ_ID,
+            P.USER_ID,
+            P.PJ_NAME,
+            P.PJ_DESCRIPTION,
+            P.PJ_PROFILE_AFI,
+            P.PJ_ST_CODE,
+            P.PJ_CREATED_DT,
+            P.PJ_END_DT,
+            P.PJ_CATE_ID,
+            P.PJ_TYPE_CODE,
+            P.PJ_PROGRESS,
+            P.PJ_VIEW_COUNT
+        FROM (
+            SELECT 
+                P.PJ_ID,
+                P.USER_ID,
+                P.PJ_NAME,
+                P.PJ_DESCRIPTION,
+                P.PJ_PROFILE_AFI,
+                P.PJ_ST_CODE,
+                P.PJ_CREATED_DT,
+                P.PJ_END_DT,
+                P.PJ_CATE_ID,
+                P.PJ_TYPE_CODE,
+                P.PJ_PROGRESS,
+                P.PJ_VIEW_COUNT
+            FROM PROJECT P
+            WHERE PJ_TYPE_CODE = 'P0201'
+            AND PJ_ST_CODE !=  'P0403'
+            <if test="paging.projectvo.userId != null and projectvo.userId != ''">
+                AND P.USER_ID LIKE '%${projectvo.userId}%'
+            </if>
+            <if test="paging.projectvo.pjName != null and projectvo.pjName != ''">
+                AND P.PJ_NAME LIKE '%${projectvo.pjName}%'
+            </if>
+            <if test="paging.projectvo.pjDescription != null and projectvo.pjDescription != ''">
+                AND P.PJ_DESCRIPTION LIKE '%${projectvo.pjDescription}%'
+            </if>
+            <if test="paging.projectvo.pjCateId != null and projectvo.pjCateId != ''">
+                AND P.PJ_CATE_ID = #{projectvo.pjCateId}
+            </if>
+            ORDER BY P.PJ_VIEW_COUNT DESC
+        ) P
+    ) A
+    <where>
+        <if test="paging neq null">
+        <![CDATA[
+        A.RNUM >= #{paging.startRow} AND A.RNUM <= #{paging.endRow}
+        ]]>
+        </if>
+    </where>
+</select>
+
+
+
+	
+<!-- 	프로젝트를 상세조회하는 쿼리 -->
+	<select id="selectProject" resultMap="projectMap">
+		SELECT
+		    A.PJ_ID,
+		    A.USER_ID,
+		    A.PJ_NAME,
+		    A.PJ_DESCRIPTION,
+		    A.PJ_PROFILE_AFI,
+		    A.PJ_ST_CODE,
+		    A.PJ_CREATED_DT,
+		    A.PJ_END_DT,
+		    A.PJ_TYPE_CODE,
+		    A.PJ_CATE_ID,
+		    A.PJ_PROGRESS,
+		    B.TASK_ID,
+		    B.TASK_PARENT_ID,
+		    B.TASK_INSTRUCTER_ID,
+		    B.TASK_ASSIGNEE_ID,
+		    B.TASK_NAME,
+		    B.TASK_CONTENT,
+		    B.TASK_CREATED_DATE,
+		    B.TASK_START_DATE,
+		    B.TASK_END_DATE,
+		    B.TASK_IMPORTANCE_CODE,
+		    B.TASK_ST_CODE,
+		    B.TASK_PROGRESS,
+		    B.TASK_AFI,
+		    B.TASK_IS_DEL
+		FROM
+		    PROJECT A
+		LEFT JOIN
+		    TASK_BOARD B ON A.PJ_ID = B.PJ_ID
+		WHERE
+		    A.PJ_ID = #{pjId}
+		
+	</select>
+	
+<!-- 	프로젝트를 인서트하는 쿼리 -->
+	<insert id="insertProject">
+		<selectKey order="BEFORE" keyProperty="pjId" resultType="string">
+			SELECT  SUBSTR(#{pjTypeCode},1,3) ||
+				LPAD( NVL( TO_NUMBER( SUBSTR(MAX(PJ_ID), 4) ), 0) + 1, 5, '0')
+			FROM PROJECT
+			WHERE SUBSTR(PJ_ID,1,3) = SUBSTR(#{pjTypeCode},1,3)
+		</selectKey>
+		
+		INSERT INTO PROJECT (
+        PJ_ID,
+        USER_ID,
+        PJ_NAME,
+        PJ_DESCRIPTION,
+        PJ_PROFILE_AFI,
+        PJ_END_DT,
+        PJ_TYPE_CODE,
+        PJ_PROGRESS,
+        PJ_CATE_ID
+    ) VALUES (
+        #{pjId,jdbcType=VARCHAR},
+        #{userId,jdbcType=VARCHAR},
+        #{pjName,jdbcType=VARCHAR},
+        #{pjDescription,jdbcType=CLOB},
+        #{pjProfileAfi,jdbcType=NUMERIC},
+        #{pjEndDt,jdbcType=DATE},
+        #{pjTypeCode,jdbcType=CHAR},
+        0,
+        #{pjCateId,jdbcType=VARCHAR}
+    )
+	</insert>
+<!-- 	프로젝트를 업데이트하는 쿼리 -->
+	<update id="updateProject">
+		UPDATE project
+		SET
+		    PJ_NAME = #{pjName,jdbcType=VARCHAR},
+		    PJ_DESCRIPTION = #{pjDescription,jdbcType=CLOB},
+		    PJ_PROFILE_AFI = #{pjProfileAfi,jdbcType=VARCHAR}
+		WHERE
+		    pj_id = #{pjId}
+	</update>
+	
+<!-- 	프로젝트를 삭제하는 쿼리 -->
+	<update id="updateProjectStatus">
+		UPDATE project
+		SET
+		    PJ_ST_CODE = #{pjStCode,jdbcType=VARCHAR}
+		WHERE
+		    pj_id = #{pjId}
+	</update>
+	
+	<select id="selectMyOwnProjectList" resultType="kr.or.ddit.projects.vo.ProjectVO">
+	SELECT
+	    PJ_ID,
+	    USER_ID,
+	    PJ_NAME,
+	    PJ_DESCRIPTION,
+	    PJ_PROFILE_AFI,
+	    PJ_ST_CODE,
+	    PJ_CREATED_DT,
+	    PJ_END_DT,
+	    PJ_TYPE_CODE,
+	    PJ_CATE_ID,
+	    PJ_PROGRESS,
+	    PJ_VIEW_COUNT
+	FROM
+	    PROJECT
+	WHERE USER_ID = #{userName}
+	</select>
+	
+</mapper>

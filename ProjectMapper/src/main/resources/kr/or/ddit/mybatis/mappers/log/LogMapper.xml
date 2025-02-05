@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.log.mapper.LogMapper">
+
+	<insert id="insertLog">
+	<selectKey order="BEFORE" resultType="string" keyProperty="logId">
+		SELECT 'L' || TO_CHAR(SYSDATE,'YYMMDD') || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(LOG_ID),8)),0)+1,9,'0')
+		FROM LOG
+		WHERE TO_CHAR(SYSDATE, 'YYMMDD') = SUBSTR(LOG_ID, 2, 6)
+	</selectKey>
+	
+		INSERT INTO log (
+		    LOG_ID,
+		    LOG_CREATED_DATE,
+		    RESOURCE_ID,
+		    USER_ID,
+		    ENTITY_ID,
+		    PJ_ID
+		) VALUES (
+			  #{logId,jdbcType=VARCHAR}
+			, SYSDATE
+			, #{resourceId,jdbcType=VARCHAR}
+			, #{userId,jdbcType=VARCHAR}
+		    , #{entityId,jdbcType=VARCHAR}
+		    , #{pjId,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<resultMap type="LogVO" id="logIssueMap" autoMapping="true">
+		<association property="resource" javaType="ResourceVO" autoMapping="true" />
+		<association property="requester" javaType="UsersVO" autoMapping="true" />
+		<association property="handler" javaType="string">
+			<result column="HANDLER_NAME" property="handler"/>
+		</association>
+		<association property="issue" javaType="kr.or.ddit.projects.vo.IssueVO" autoMapping="true" />
+		<association property="projectMember" javaType="kr.or.ddit.projects.vo.ProjectMemberVO" autoMapping="true" />
+		<association property="code" javaType="CodeVO" autoMapping="true"/>
+	</resultMap>
+	
+	<select id="selectWorkIssueList" resultMap="logIssueMap">
+		WITH LOGS AS(
+		SELECT 
+		    A.LOG_ID,
+		    A.LOG_CREATED_DATE,
+		    A.RESOURCE_ID,
+		    A.USER_ID,
+		    A.ENTITY_ID,
+		    A.PJ_ID,
+		    B.RESOURCE_URI_ADDR,
+		    B.RESOURCE_METHOD,
+		    B.RESOURCE_NAME,
+		    B.RESOURCE_ORDER,
+		    B.RESOURCE_TYPE,
+		    B.RESOURCE_COMMENT,
+		    B.SIGNATURE_NAME,
+		    B.TABLE_NAME,
+		    C.USER_NAME
+		FROM LOG A
+		INNER JOIN RESOURCES B ON A.RESOURCE_ID = B.RESOURCE_ID
+		INNER JOIN USERS C ON A.USER_ID = C.USER_ID
+		WHERE B.USE_HISTORY = 'Y'
+		AND A.PJ_ID = #{pjId}
+		AND B.TABLE_NAME ='ISSUE'
+		ORDER BY A.LOG_CREATED_DATE
+		),
+		ISSUES AS(
+		SELECT LOGS.*,
+		    I.ISSUE_ID
+		    ,I.ISSUE_TITLE
+		    ,I.ISSUE_REQUESTER_ID
+		    ,I.ISSUE_HANDLER_ID
+		    ,I.ISSUE_CONTENT
+		    ,I.ISSUE_IMP_CODE
+		FROM LOGS
+		LEFT OUTER JOIN ISSUE I ON LOGS.TABLE_NAME = 'ISSUE' AND LOGS.ENTITY_ID = I.ISSUE_ID
+		AND I.ISSUE_IS_DEL = 'N'
+		AND I.ISSUE_TYPE_CODE = 'I0102'
+		)
+		SELECT A.*
+		    , B.PJ_MEM_ID
+		    , C.USER_NAME AS HANDLER_NAME
+		    , D.CODE_NAME
+		FROM ISSUES A
+		INNER JOIN CODE D ON(A.ISSUE_IMP_CODE = D.CODE_ID)
+		LEFT OUTER JOIN PROJECT_MEMBER B ON (A.ISSUE_HANDLER_ID = B.PJ_MEM_ID)
+		LEFT OUTER JOIN USERS C ON (B.USER_ID = C.USER_ID)
+	
+	</select>
+	
+	<resultMap type="LogVO" id="logTaskMap" autoMapping="true">
+		<association property="resource" javaType="ResourceVO" autoMapping="true" />
+		<association property="requester" javaType="UsersVO" autoMapping="true" />
+		<association property="handler" javaType="string">
+			<result column="HANDLER_NAME" property="handler"/>
+		</association>
+		<association property="taskBoard" javaType="kr.or.ddit.projects.vo.TaskBoardVO" autoMapping="true" />
+		<association property="projectMember" javaType="kr.or.ddit.projects.vo.ProjectMemberVO" autoMapping="true" />
+		<association property="code" javaType="CodeVO" autoMapping="true"/>
+	</resultMap>
+	
+	<select id="selectWorkTaskList" resultMap="logTaskMap">
+		WITH LOGS AS(
+		SELECT 
+		    A.LOG_ID,
+		    A.LOG_CREATED_DATE,
+		    A.RESOURCE_ID,
+		    A.USER_ID,
+		    A.ENTITY_ID,
+		    A.PJ_ID,
+		    B.RESOURCE_URI_ADDR,
+		    B.RESOURCE_METHOD,
+		    B.RESOURCE_NAME,
+		    B.RESOURCE_ORDER,
+		    B.RESOURCE_TYPE,
+		    B.RESOURCE_COMMENT,
+		    B.SIGNATURE_NAME,
+		    B.TABLE_NAME,
+		    C.USER_NAME
+		FROM LOG A
+		INNER JOIN RESOURCES B ON A.RESOURCE_ID = B.RESOURCE_ID
+		INNER JOIN USERS C ON A.USER_ID = C.USER_ID
+		WHERE B.USE_HISTORY = 'Y'
+		AND A.PJ_ID = #{pjId}
+		AND B.TABLE_NAME = 'TASK_BOARD'
+		ORDER BY A.LOG_CREATED_DATE
+		),
+		TASKS AS(
+		SELECT LOGS.*,
+		    T.TASK_ID
+		    ,T.TASK_NAME
+		    ,T.TASK_INSTRUCTER_ID
+		    ,T.TASK_ASSIGNEE_ID
+		    ,T.TASK_CONTENT
+		    ,T.TASK_IMPORTANCE_CODE
+		FROM LOGS
+		LEFT OUTER JOIN TASK_BOARD T ON LOGS.TABLE_NAME = 'TASK_BOARD' AND LOGS.ENTITY_ID = T.TASK_ID
+		AND T.TASK_IS_DEL = 'N'
+		)
+		SELECT A.*
+		    , B.PJ_MEM_ID
+		    , C.USER_NAME AS HANDLER_NAME
+		    , D.CODE_NAME
+		FROM TASKS A
+		INNER JOIN CODE D ON(A.TASK_IMPORTANCE_CODE = D.CODE_ID)
+		LEFT OUTER JOIN PROJECT_MEMBER B ON (A.TASK_ASSIGNEE_ID = B.PJ_MEM_ID)
+		LEFT OUTER JOIN USERS C ON (B.USER_ID = C.USER_ID)
+	</select>
+</mapper>

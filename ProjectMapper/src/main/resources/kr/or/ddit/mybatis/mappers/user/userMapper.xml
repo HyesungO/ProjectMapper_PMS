@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.users.user.mapper.UserMapper">
+
+
+
+    
+
+
+
+
+
+    
+    <!-- 전체 레코드 수 조회 -->
+    <select id="selectTotalRecord" parameterType="PaginationInfo" resultType="int">
+        SELECT COUNT(*)
+        FROM users
+        <where>
+            <if test="simpleCondition != null and simpleCondition.searchWord != null and simpleCondition.searchWord != ''">                
+            <choose>
+                    <when test="simpleCondition.searchType == 'userId'">
+                        LOWER(user_id) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                    </when>
+                    <when test="simpleCondition.searchType == 'userName'">
+                        LOWER(user_name) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                    </when>
+                    <when test="simpleCondition.searchType == 'userEmail'">
+                        LOWER(user_email) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                    </when>
+                    <when test="simpleCondition.searchType == 'userPhone'">
+                        REPLACE(user_phone_number, '-', '') LIKE '%' || REPLACE(#{simpleCondition.searchWord}, '-', '') || '%'
+                    </when>
+                    <when test="simpleCondition.searchType == 'all'">
+                        LOWER(user_id) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                        OR LOWER(user_name) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                        OR LOWER(user_email) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                        OR REPLACE(user_phone_number, '-', '') LIKE '%' || REPLACE(#{simpleCondition.searchWord}, '-', '') || '%'
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </select>
+    
+    <!-- 페이징 처리된 사용자 목록 조회 -->
+    <select id="selectUserList" resultType="UsersVO" parameterType="PaginationInfo">
+        SELECT B.*
+        FROM (
+            SELECT ROWNUM RNUM, A.*
+            FROM (
+                SELECT
+                    user_id,
+                    user_name,
+                    user_email,
+                    user_phone_number,
+                    user_date_of_birth,
+                    user_addr1,
+                    user_addr2,
+                    user_st_code,
+                    user_role,
+                    user_regist_date,
+                    user_bs_regist_no,
+                    user_bs_afi,
+                    user_profile_afi
+                FROM users
+                <where>
+                    <if test="simpleCondition != null and simpleCondition.searchWord != null and simpleCondition.searchWord != ''">
+                        <choose>
+                            <when test="simpleCondition.searchType == 'userId'">
+                                LOWER(user_id) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                            </when>
+                            <when test="simpleCondition.searchType == 'userName'">
+                                LOWER(user_name) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                            </when>
+                            <when test="simpleCondition.searchType == 'userEmail'">
+                                LOWER(user_email) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                            </when>
+                            <when test="simpleCondition.searchType == 'userPhone'">
+                                REPLACE(user_phone_number, '-', '') LIKE '%' || REPLACE(#{simpleCondition.searchWord}, '-', '') || '%'
+                            </when>
+                            <when test="simpleCondition.searchType == 'all'">
+                                LOWER(user_id) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                                OR LOWER(user_name) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                                OR LOWER(user_email) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                                OR REPLACE(user_phone_number, '-', '') LIKE '%' || REPLACE(#{simpleCondition.searchWord}, '-', '') || '%'
+                            </when>
+                        </choose>
+                    </if>
+                </where>
+                <choose>
+                    <when test="variousCondition != null and variousCondition.column != null">
+                        ORDER BY
+                        <choose>
+                            <when test="variousCondition.column == 'userId'">LOWER(user_id)</when>
+                            <when test="variousCondition.column == 'userName'">LOWER(user_name)</when>
+                            <when test="variousCondition.column == 'userEmail'">LOWER(user_email)</when>
+                            <when test="variousCondition.column == 'userPhone'">user_phone_number</when>
+                            <when test="variousCondition.column == 'userBirth'">user_date_of_birth</when>
+                            <when test="variousCondition.column == 'userAddr'">LOWER(user_addr1)</when>
+                            <when test="variousCondition.column == 'userStatus'">user_st_code</when>
+                            <when test="variousCondition.column == 'userRegistDate'">user_regist_date</when>
+                            <otherwise>user_regist_date</otherwise>
+                        </choose>
+                        <if test="variousCondition.direction == 'desc'">DESC NULLS LAST</if>
+                        <if test="variousCondition.direction == 'asc'">ASC NULLS FIRST</if>
+                    </when>
+                    <otherwise>
+                        ORDER BY user_regist_date DESC
+                    </otherwise>
+                </choose>
+            ) A
+            WHERE ROWNUM &lt;= #{endRow}
+        ) B
+        WHERE B.RNUM &gt;= #{startRow}
+    </select>
+    
+    <!-- 인증용 사용자 조회 -->
+    <select id="selectUserAuth" resultType="kr.or.ddit.users.vo.UsersVO">
+        SELECT 
+            USER_ID,
+            USER_EMAIL,
+            USER_NAME,
+            USER_PASSWORD,
+            USER_DATE_OF_BIRTH,
+            USER_ADDR1,
+            USER_ADDR2,
+            USER_PROFILE_AFI,
+            USER_PHONE_NUMBER,
+            USER_ST_CODE,
+            USER_ROLE,
+            USER_REGIST_DATE,
+            USER_BS_REGIST_NO,
+            USER_BS_AFI
+        FROM USERS
+        WHERE USER_ID = #{userid} 
+        AND user_st_code != 'U0104'  <!-- 탈퇴한 회원 제외 -->
+    </select>
+    
+    <!-- ID 찾기 -->
+    <select id="findUserIdByEmailAndPhone" resultType="string">
+        SELECT user_id
+        FROM users
+        WHERE user_email = #{userEmail}
+        AND user_phone_number = #{userPhone}
+        AND user_st_code != 'U0104'
+    </select>
+
+    <select id="countUserByIdAndEmail" resultType="int">
+        SELECT COUNT(*)
+        FROM users
+        WHERE user_id = #{userId}
+        AND user_email = #{userEmail}
+        AND user_st_code != 'U0104'
+    </select>
+    
+    <!-- 사용자 검색 -->
+    <select id="searchUsers" parameterType="map" resultType="UsersVO">
+        SELECT 
+            user_id,
+            user_name,
+            user_email,
+            user_phone_number,
+            user_date_of_birth,
+            user_addr1,
+            user_addr2,
+            user_st_code,
+            user_role,
+            user_regist_date,
+            user_bs_regist_no,
+            user_bs_afi,
+            user_profile_afi
+        FROM users
+        WHERE 1=1
+        <choose>
+            <when test="criteria1 != null and criteria1 != '' and criteria2 != null and criteria2 != ''">
+                AND (
+                    <choose>
+                        <when test="criteria1 == 'userId'">
+                            LOWER(user_id) LIKE LOWER('%'||#{keyword}||'%')
+                        </when>
+                        <when test="criteria1 == 'userName'">
+                            LOWER(user_name) LIKE LOWER('%'||#{keyword}||'%')
+                        </when>
+                        <when test="criteria1 == 'userEmail'">
+                            LOWER(user_email) LIKE LOWER('%'||#{keyword}||'%')
+                        </when>
+                        <when test="criteria1 == 'userPhone'">
+                            REPLACE(user_phone_number, '-', '') LIKE '%'||REPLACE(#{keyword}, '-', '')||'%'
+                        </when>
+                        <when test="criteria1 == 'userAddr'">
+                            (LOWER(user_addr1) LIKE LOWER('%'||#{keyword}||'%') 
+                            OR LOWER(user_addr2) LIKE LOWER('%'||#{keyword}||'%'))
+                        </when>
+                        <when test="criteria1 == 'userBirth'">
+                            user_date_of_birth LIKE '%'||REPLACE(#{keyword}, '-', '')||'%'
+                        </when>
+                    </choose>
+                    OR
+                    <choose>
+                        <when test="criteria2 == 'userId'">
+                            LOWER(user_id) LIKE LOWER('%'||#{keyword}||'%')
+                        </when>
+                        <when test="criteria2 == 'userName'">
+                            LOWER(user_name) LIKE LOWER('%'||#{keyword}||'%')
+                        </when>
+                        <when test="criteria2 == 'userEmail'">
+                            LOWER(user_email) LIKE LOWER('%'||#{keyword}||'%')
+                        </when>
+                        <when test="criteria2 == 'userPhone'">
+                            REPLACE(user_phone_number, '-', '') LIKE '%'||REPLACE(#{keyword}, '-', '')||'%'
+                        </when>
+                        <when test="criteria2 == 'userAddr'">
+                            (LOWER(user_addr1) LIKE LOWER('%'||#{keyword}||'%') 
+                            OR LOWER(user_addr2) LIKE LOWER('%'||#{keyword}||'%'))
+                        </when>
+                        <when test="criteria2 == 'userBirth'">
+                            user_date_of_birth LIKE '%'||REPLACE(#{keyword}, '-', '')||'%'
+                        </when>
+                    </choose>
+                )
+            </when>
+            <when test="criteria1 != null and criteria1 != ''">
+                AND
+                <choose>
+                    <when test="criteria1 == 'userId'">
+                        LOWER(user_id) LIKE LOWER('%'||#{keyword}||'%')
+                    </when>
+                    <when test="criteria1 == 'userName'">
+                        LOWER(user_name) LIKE LOWER('%'||#{keyword}||'%')
+                    </when>
+                    <when test="criteria1 == 'userEmail'">
+                        LOWER(user_email) LIKE LOWER('%'||#{keyword}||'%')
+                    </when>
+                    <when test="criteria1 == 'userPhone'">
+                        REPLACE(user_phone_number, '-', '') LIKE '%'||REPLACE(#{keyword}, '-', '')||'%'
+                    </when>
+                    <when test="criteria1 == 'userAddr'">
+                        (LOWER(user_addr1) LIKE LOWER('%'||#{keyword}||'%') 
+                        OR LOWER(user_addr2) LIKE LOWER('%'||#{keyword}||'%'))
+                    </when>
+                    <when test="criteria1 == 'userBirth'">
+                        user_date_of_birth LIKE '%'||REPLACE(#{keyword}, '-', '')||'%'
+                    </when>
+                </choose>
+            </when>
+        </choose>
+        ORDER BY user_regist_date DESC
+    </select>
+
+    <resultMap type="UsersVO" id="userMap" autoMapping="true">
+        <id property="userId" column="user_id" />
+        <result property="userProfileAfi" column="user_profile_afi" />
+        <association property="atchFile" column="user_profile_afi"
+            select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+    </resultMap>
+
+    <!-- 상세 조회 -->
+    <select id="selectUser" resultMap="userMap">
+        SELECT
+            A.USER_ID,
+            A.USER_NAME,
+            A.USER_EMAIL,
+            A.USER_PHONE_NUMBER,
+            A.USER_PASSWORD,
+            A.USER_DATE_OF_BIRTH,
+            A.USER_ADDR1,
+            A.USER_ADDR2,
+            A.USER_ST_CODE,
+            A.USER_ROLE,
+            A.USER_REGIST_DATE,
+            A.USER_BS_REGIST_NO,
+            A.USER_BS_AFI,
+            A.USER_PROFILE_AFI,
+            B.FILE_NAME
+        FROM USERS A
+        LEFT OUTER JOIN ATCH_FILE_DETAIL B ON (A.USER_PROFILE_AFI = B.ATCH_FILE_ID)
+        WHERE USER_ID = #{userId}
+    </select>
+
+    <!-- 회원 등록 -->
+    <insert id="insertUser" parameterType="UsersVO">
+        INSERT INTO users (
+            user_id,
+            user_email,
+            user_name,
+            user_password,
+            user_date_of_birth,
+            user_addr1,
+            user_addr2,
+            user_profile_afi,
+            user_phone_number,
+            user_st_code,
+            user_role,
+            user_regist_date,
+            user_bs_regist_no,
+            user_bs_afi
+        ) VALUES (
+            #{userId},
+            #{userEmail},
+            #{userName},
+            #{userPassword},
+            #{userDateOfBirth},
+            #{userAddr1},
+            #{userAddr2},
+            #{userProfileAfi},
+            #{userPhoneNumber},
+            #{userStCode},
+            #{userRole},
+            SYSDATE,
+            #{userBsRegistNo},
+            #{userBsAfi}
+        )
+    </insert>
+
+    <!-- 회원 정보 수정 -->
+    <update id="updateUser" parameterType="UsersVO">
+        UPDATE users
+        SET
+            user_email = #{userEmail},
+            user_name = #{userName},
+            <if test="userPassword != null and userPassword != ''">
+            user_password = #{userPassword},
+            </if>
+            user_date_of_birth = #{userDateOfBirth},
+            user_addr1 = #{userAddr1},
+            user_addr2 = #{userAddr2},
+            user_profile_afi = #{userProfileAfi},
+            user_phone_number = #{userPhoneNumber},
+            <if test="userStCode != null">
+            user_st_code = #{userStCode},
+            </if>
+            user_bs_regist_no = #{userBsRegistNo},
+            user_bs_afi = #{userBsAfi}
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 회원 삭제 -->
+    <delete id="deleteUser" parameterType="string">
+        DELETE FROM users 
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 로그인 인증 -->
+    <select id="selectUserForAuth" resultType="UsersVO">
+        SELECT 
+            user_id,
+            user_name,
+            user_email,
+            user_phone_number,
+            user_date_of_birth,
+            user_addr1,
+            user_addr2,
+            user_st_code,
+            user_role,
+            user_regist_date,
+            user_bs_regist_no,
+            user_bs_afi,
+            user_profile_afi
+        FROM users 
+        WHERE user_id = #{userId} 
+        AND user_password = #{userPassword}
+    </select>
+</mapper>

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.projects.cloud.mapper.CloudResourceMapper">
+	
+	<sql id="cloudResourceCoulmns">
+		CLOUD_RESOURCE_ID
+		,PJ_MEM_ID
+		,CLOUD_ROOT_ID
+		,CLOUD_RES_NAME
+		,CLOUD_FILE_SIZE
+		,CLOUD_UPLOAD_DT
+		,CLOUD_RES_TYPE_CODE
+		,CLOUD_PAR_RES_ID
+		,CLOUD_FILE_NAME
+	</sql>
+	
+	<sql id="codeCoulmns">
+		CODE_ID
+		,CODE_P_ID
+		,CODE_NAME
+		,CODE_DESC
+	</sql>
+	
+	
+	
+	<insert id="insertCloudResource">
+		<selectKey order="BEFORE" resultType="string" keyProperty="cloudResourceId">
+			SELECT 'CR'||#{cloudRootId} || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(CLOUD_RESOURCE_ID),11)),0)+1,5,'0')
+			FROM CLOUD_RESOURCE
+		</selectKey>
+			INSERT INTO CLOUD_RESOURCE (
+			    CLOUD_RESOURCE_ID,
+			    PJ_MEM_ID,
+			    CLOUD_ROOT_ID,
+			    CLOUD_RES_NAME,
+			    CLOUD_FILE_SIZE,
+			    CLOUD_UPLOAD_DT,
+			    CLOUD_RES_TYPE_CODE,
+			    CLOUD_PAR_RES_ID,
+			    CLOUD_FILE_NAME,
+			    CLOUD_FILE_MIME_TYPE,
+			    THUMBNAIL_IMAGE
+			    
+			) VALUES (
+			      #{cloudResourceId,jdbcType=VARCHAR}
+				, #{pjMemId,jdbcType=VARCHAR}
+				, #{cloudRootId,jdbcType=VARCHAR}
+				, #{cloudResName,jdbcType=VARCHAR}
+				, #{cloudFileSize,jdbcType=NUMERIC}
+				, SYSDATE
+				, #{cloudResTypeCode,jdbcType=CHAR}
+				, #{cloudParResId,jdbcType=VARCHAR}
+				, #{cloudFileName,jdbcType=VARCHAR}
+				, #{cloudFileMimeType,jdbcType=VARCHAR}
+				, #{thumbnailImage,jdbcType=BLOB}
+			)
+	</insert>
+	
+	<resultMap type="kr.or.ddit.projects.vo.CloudResourceVO" id="cloudResourceMap" autoMapping="true">
+		<association property="code" javaType="CodeVO" autoMapping="true" />
+	</resultMap>
+	
+	<select id="selectCloudResourceList" resultMap="cloudResourceMap">
+		SELECT 
+			<include refid="cloudResourceCoulmns" />
+			, <include refid="codeCoulmns" />
+		FROM CLOUD_RESOURCE 
+		INNER JOIN CODE ON (CLOUD_RES_TYPE_CODE = CODE_ID)
+		WHERE CLOUD_ROOT_ID = #{cloudRootId}
+		ORDER BY CLOUD_RES_NAME
+	</select>
+	
+	<select id="selectPathList" resultType="kr.or.ddit.projects.vo.CloudResourceVO">
+		SELECT SUBSTR(SYS_CONNECT_BY_PATH(CLOUD_FILE_NAME,'/'),2) CLOUD_RES_PATH ,CLOUD_RESOURCE.*
+		FROM CLOUD_RESOURCE
+		WHERE CLOUD_ROOT_ID = #{cloudRootId}
+		START WITH CLOUD_PAR_RES_ID IS NULL
+		CONNECT BY PRIOR CLOUD_RESOURCE_ID = CLOUD_PAR_RES_ID
+	</select>
+	
+	<select id="selectSideFileList" resultType="kr.or.ddit.projects.vo.CloudResourceVO">
+		SELECT 
+		    CLOUD_RESOURCE_ID <!-- 자원 PK -->
+		    , PJ_MEM_ID
+		    , CLOUD_ROOT_ID
+		    , CLOUD_RES_NAME
+		    , CLOUD_FILE_SIZE
+		    , CLOUD_UPLOAD_DT
+		    , CLOUD_RES_TYPE_CODE
+		    , CLOUD_PAR_RES_ID		<!-- 상위 자원 PK / 최상위인 경우 null -->
+		    , SYS_CONNECT_BY_PATH(CLOUD_RES_NAME, '/') CLOUD_RES_PATH <!-- AWS를 위한 노드 경로 -->
+		    , LEVEL <!-- 계층 순서 -->
+		    , CONNECT_BY_ISLEAF LEAF_FLAG <!-- 마지막 경로인지 확인 1이면 마지막, 0이면 아님 -->
+		FROM CLOUD_RESOURCE
+		WHERE CLOUD_ROOT_ID = #{cloudRootId}
+		START WITH CLOUD_PAR_RES_ID IS NULL <!-- 최상위인 노드를 기준으로 지정 -->
+		CONNECT BY PRIOR CLOUD_RESOURCE_ID = CLOUD_PAR_RES_ID <!-- 부모 자식 관계 설정 -->
+	</select>
+	
+	<select id="selectModalFolderList" resultType="kr.or.ddit.projects.vo.CloudResourceVO">
+		SELECT 
+		    CLOUD_RESOURCE_ID
+		    , PJ_MEM_ID
+		    , CLOUD_ROOT_ID
+		    , CLOUD_RES_NAME
+		    , CLOUD_FILE_SIZE
+		    , CLOUD_UPLOAD_DT
+		    , CLOUD_RES_TYPE_CODE
+		    , CLOUD_PAR_RES_ID
+		    , SUBSTR(SYS_CONNECT_BY_PATH(CLOUD_FILE_NAME,'/'),2) CLOUD_RES_PATH
+		    , LEVEL
+		    , CONNECT_BY_ISLEAF LEAF_FLAG
+		FROM CLOUD_RESOURCE
+		WHERE CLOUD_ROOT_ID = #{cloudRootId}
+		AND CLOUD_RES_TYPE_CODE = 'C0201'
+		START WITH CLOUD_PAR_RES_ID IS NULL
+		CONNECT BY PRIOR CLOUD_RESOURCE_ID = CLOUD_PAR_RES_ID
+	</select>
+	
+	<select id="selectCloudResource" resultType="kr.or.ddit.projects.vo.CloudResourceVO">
+		SELECT
+			 SUBSTR(SYS_CONNECT_BY_PATH(CLOUD_FILE_NAME,'/'),2) CLOUD_RES_PATH
+			, <include refid="cloudResourceCoulmns" />
+			, CONNECT_BY_ISLEAF LEAF_FLAG
+		FROM CLOUD_RESOURCE
+		WHERE CLOUD_RESOURCE_ID = #{cloudResourceId}
+		START WITH CLOUD_PAR_RES_ID IS NULL
+		CONNECT BY PRIOR CLOUD_RESOURCE_ID = CLOUD_PAR_RES_ID
+	</select>
+	
+	<delete id="deleteCloudResource">
+		DELETE FROM CLOUD_RESOURCE
+		WHERE CLOUD_RESOURCE_ID = #{cloudResourceId}
+	</delete>
+	
+	<delete id="deleteChildCloudResource">
+		DELETE FROM CLOUD_RESOURCE
+    	WHERE CLOUD_RESOURCE_ID IN (
+	        SELECT CLOUD_RESOURCE_ID
+	        FROM CLOUD_RESOURCE
+	        START WITH CLOUD_PAR_RES_ID = #{cloudResourceId}
+        CONNECT BY PRIOR CLOUD_RESOURCE_ID = CLOUD_PAR_RES_ID
+    )
+	</delete>
+	
+	<!-- 파일 돌더 이름 변경 -->
+	<update id="updateCloudResource">
+		UPDATE CLOUD_RESOURCE
+		SET
+		    CLOUD_RES_NAME = #{cloudResName,jdbcType=VARCHAR}
+		    <if test="cloudFileName != null">
+		    	, CLOUD_FILE_NAME = #{cloudFileName,jdbcType=VARCHAR}
+		    </if>
+		WHERE
+		    CLOUD_RESOURCE_ID = #{cloudResourceId}
+	</update>
+	
+	<!-- 파일 폴더 경로 변경 -->
+	<update id="updateMoveObjectPath">
+		UPDATE CLOUD_RESOURCE
+		SET
+		    CLOUD_PAR_RES_ID = 
+		    <choose>
+	            <when test="cloudParResId == 'null'">
+	                NULL
+	            </when>
+	            <otherwise>
+	                #{cloudParResId}
+	            </otherwise>
+	        </choose>
+		WHERE
+		    CLOUD_RESOURCE_ID = #{cloudResourceId}
+	</update>
+	
+	<resultMap type="kr.or.ddit.projects.vo.CloudResourceVO" id="detailMapt" autoMapping="true">
+		<association property="user" javaType="UsersVO" autoMapping="true"/>
+	</resultMap>
+	
+	<select id="selectChildObjectCntList" resultMap="detailMapt">
+		SELECT CR.*
+		    , U.USER_NAME
+		FROM (
+		    SELECT 
+		    	CLOUD_RESOURCE_ID
+		        , CLOUD_RES_TYPE_CODE
+		        , CLOUD_UPLOAD_DT
+		        , CLOUD_FILE_SIZE
+		        , PJ_MEM_ID
+		        , CLOUD_FILE_MIME_TYPE
+		        , CLOUD_RES_NAME
+		        , THUMBNAIL_IMAGE
+		    FROM 
+		        CLOUD_RESOURCE
+		    WHERE 
+		        CLOUD_ROOT_ID = #{cloudRootId}
+		    START WITH 
+		        <if test="cloudResourceId != null">
+					CLOUD_RESOURCE_ID = #{cloudResourceId}		
+				</if>
+				<if test="cloudResourceId == null">
+				    CLOUD_PAR_RES_ID IS NULL		
+				</if>
+		    CONNECT BY 
+		        PRIOR CLOUD_RESOURCE_ID = CLOUD_PAR_RES_ID
+		    )CR
+		INNER JOIN PROJECT_MEMBER P ON (CR.PJ_MEM_ID = P.PJ_MEM_ID)
+		INNER JOIN USERS U ON (P.USER_ID = U.USER_ID)
+	</select>
+	
+	<select id="selectStorageCloudList" resultType="kr.or.ddit.projects.vo.CloudResourceVO">
+		SELECT  
+		    CASE 
+		    WHEN INSTR(CLOUD_FILE_MIME_TYPE, '/') > 0
+		    THEN SUBSTR(CLOUD_FILE_MIME_TYPE,1, INSTR(CLOUD_FILE_MIME_TYPE, '/')-1)
+		    ELSE 'other'
+		    END CLOUD_FILE_MIME_TYPE
+		    , SUM(CLOUD_FILE_SIZE) CLOUD_FILE_SIZE
+		FROM CLOUD_RESOURCE
+		WHERE CLOUD_ROOT_ID = #{cloudRootId}
+		GROUP BY CLOUD_FILE_MIME_TYPE
+	
+	</select>
+</mapper>	

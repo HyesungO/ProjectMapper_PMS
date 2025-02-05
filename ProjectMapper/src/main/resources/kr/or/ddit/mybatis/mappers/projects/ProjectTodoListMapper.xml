@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.todoList.mapper.TodoListMapper">
+
+	<select id="selectTodoListList" resultType="kr.or.ddit.projects.vo.TodoListVO">
+		SELECT
+			 todo_id
+			,pj_mem_id
+			,pj_id
+			,todo_title
+			,todo_st_code
+			,todo_created_date
+			,todo_modi_date
+			,todo_end_date
+			,todo_is_del
+			,code_name
+		FROM todo_list
+		INNER JOIN code ON (code.code_id = todo_list.todo_st_code)
+		WHERE pj_mem_id = #{pjMemId}
+			AND pj_id = #{pjId}
+			AND todo_is_del = 'N'
+		ORDER BY todo_id
+	</select>
+	
+	<select id="selectTodoList" resultType="kr.or.ddit.projects.vo.TodoListVO">
+		SELECT
+			 todo_id
+			,pj_mem_id
+			,pj_id
+			,todo_title
+			,todo_st_code
+			,todo_created_date
+			,todo_modi_date
+			,todo_end_date
+			,todo_is_del
+			,code_name
+		FROM todo_list
+		INNER JOIN code ON (code.code_id = todo_list.todo_st_code)
+		WHERE todo_id = #{todoId}
+			AND todo_is_del = 'N'
+	</select>
+	
+	<insert id="insertTodoList">
+		INSERT INTO todo_list (
+		     todo_id
+		    ,pj_mem_id
+		    ,pj_id
+		    ,todo_title
+		    ,todo_created_date
+		    ,todo_end_date
+		) VALUES (
+		    (SELECT 'TD' || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(todo_id,3))),0)+1,6,'0')
+				FROM todo_list)
+		    ,#{pjMemId}
+		    ,#{pjId}
+		    ,#{todoTitle}
+		    ,SYSDATE
+		    ,#{todoEndDate}
+		)
+	</insert>
+	
+	<update id="updateTodoList">
+		UPDATE todo_list
+		SET
+			 todo_st_code = #{todoStCode}
+			,todo_modi_date = SYSDATE
+		WHERE todo_id = #{todoId}
+	</update>
+	
+	<delete id="deleteTodoList">
+		UPDATE todo_list
+		SET
+			todo_is_del = 'Y'
+		WHERE todo_id = #{todoId}
+	</delete>
+
+</mapper>

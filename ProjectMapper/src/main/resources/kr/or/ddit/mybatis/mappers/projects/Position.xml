@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.projectRecruits.position.mapper.PositionMapper">
+
+	<resultMap type="kr.or.ddit.projects.vo.PositionVO" id="positionList" autoMapping="true">
+		<id property="positionId" column="POSITION_ID"/>
+		<association property="pj" javaType="kr.or.ddit.projects.vo.ProjectVO" autoMapping="true"></association>
+		
+		<association property="pr" javaType="kr.or.ddit.projects.vo.ProjectRecruitVO" autoMapping="true"></association>
+		
+		<association property="app" javaType="kr.or.ddit.projects.vo.ApplicationVO"></association>
+		
+	
+	</resultMap>
+
+	
+
+	<select id="selectPosition" resultMap="positionList">
+	
+		SELECT 
+		    P.POSITION_ID,
+		    P.PJ_RECRUIT_ID AS POSITION_RECRUIT_ID,
+		    P.POSITION_NAME,
+		    P.POSITION_REQ,
+		    P.POSITION_PEOPLE_COUNT,
+		    PR.PJ_RECRUIT_TITLE,
+		    PR.PJ_RECRUIT_CONTENT,
+		    PR.PJ_RECRUIT_DT,
+		    PR.PJ_RECRUIT_AFI,
+		    PR.PJ_ESTIMATED_START_DATE,
+		    PR.PJ_ESTIMATED_END_DATE,
+		    PR.PJ_RECRUIT_VIEW_COUNT,
+		    PJ.PJ_NAME,
+		    PJ.PJ_CREATED_DT,
+		    PJ.PJ_END_DT
+		    
+		FROM POSITION P
+		INNER JOIN PROJECT_RECRUIT PR ON P.PJ_RECRUIT_ID = PR.PJ_RECRUIT_ID
+		INNER JOIN PROJECT PJ ON PR.PJ_ID = PJ.PJ_ID
+		WHERE P.POSITION_ID = #{positionId}
+		
+	
+	
+	</select>
+
+
+
+<insert id="insertPosition" parameterType="map">
+    <!-- APP_ID 생성 -->
+    <selectKey order="BEFORE" resultType="string" keyProperty="appId">
+        SELECT 'APP' || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(APP_ID, 4))), 0) + 1, 3, '0') 
+        FROM APPLICATION
+    </selectKey>
+    
+    <!-- 데이터 삽입 -->
+    INSERT INTO APPLICATION (
+        APP_ID,
+		USER_ID,
+		POSITION_ID,
+		APP_STATUS_CODE,	
+        APP_CONTRACT_CODE
+    ) VALUES (
+        #{appId,jdbcType=VARCHAR},
+        #{userId,jdbcType=VARCHAR},
+        #{positionId,jdbcType=VARCHAR},
+        'A0201',
+        'N'
+    )
+</insert>
+
+
+
+</mapper>

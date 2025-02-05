@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+   <settings>
+      <setting name="mapUnderscoreToCamelCase" value="true"/>
+      <setting name="jdbcTypeForNull" value="VARCHAR"/>
+   </settings>
+   <typeAliases>
+      <!-- 페이징 관련 VO -->
+      <typeAlias type="kr.or.ddit.paging.PaginationInfo" alias="PaginationInfo"/>
+      <typeAlias type="kr.or.ddit.paging.SimpleCondition" alias="SimpleCondition"/>
+      
+      <!-- 공지사항 관련 VO -->
+      <typeAlias type="kr.or.ddit.notication.vo.NoticeBoardVO" alias="NoticeBoardVO"/>
+      
+      <!-- 파일 처리 관련 VO -->
+      <typeAlias type="kr.or.ddit.atch.vo.AtchFileVO" alias="AtchFileVO"/>
+      <typeAlias type="kr.or.ddit.atch.vo.AtchFileDetailVO" alias="AtchFileDetailVO"/>
+      
+      <!-- Resume 관련 VO 추가 -->
+      <typeAlias type="kr.or.ddit.users.vo.CareerVO" alias="CareerVO"/>
+      <typeAlias type="kr.or.ddit.users.vo.CertificateVO" alias="CertificateVO"/>
+      <typeAlias type="kr.or.ddit.users.vo.EducationVO" alias="EducationVO"/>
+      <typeAlias type="kr.or.ddit.users.vo.EducationHistoryVO" alias="EducationHistoryVO"/>
+      <typeAlias type="kr.or.ddit.users.vo.ResumeFileVO" alias="ResumeFileVO"/>
+      <typeAlias type="kr.or.ddit.users.vo.PortfolioFileVO" alias="PortfolioFileVO"/>
+      <typeAlias type="kr.or.ddit.users.vo.IntroductionVO" alias="IntroductionVO"/>
+      <typeAlias type="kr.or.ddit.users.vo.UserSkillVO" alias="UserSkillVO"/>
+      
+      <!-- 회원 관련 VO -->
+      <typeAlias type="kr.or.ddit.users.vo.UsersVO" alias="UsersVO"/>
+      <typeAlias type="kr.or.ddit.users.vo.CompanyUsersVO" alias="CompanyUsersVO"/>  
+    
+      <package name="kr.or.ddit.vo"/>
+   </typeAliases>
+</configuration>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.projects.role.mapper.ProjectRoleMapper">
+	
+	<sql id="pjRoleName">
+		PJ_ROLE_ID
+		,PJ_ROLE_NAME
+		,PJ_ID
+	</sql>
+	<sql id="pjRoleNameA">
+		A.PJ_ROLE_ID
+		,A.PJ_ROLE_NAME
+		,A.PJ_ID
+	</sql>
+	<sql id="pjRoleB">
+		B.PJ_ROLE_ID
+		, B.RESOURCE_ID
+	</sql>
+	
+	
+	<select id="selectPjRoleNameList" resultType="kr.or.ddit.projects.vo.ProjectRoleNameVO">
+		SELECT 
+			<include refid="pjRoleName"></include>
+		FROM PROJECT_ROLE_NAME
+		WHERE PJ_ID = #{pjId} OR PJ_ID IS NULL
+		ORDER BY PJ_ID DESC, PJ_ROLE_ID
+	</select>
+	
+	<insert id="insertProjectRoleName">
+		<selectKey order="BEFORE" resultType="string" keyProperty="pjRoleId">
+			SELECT #{pjId} || 'R' ||LPAD(NVL(TO_NUMBER(SUBSTR(MAX(PJ_ROLE_ID), 10)),0) + 1, 3, '0')
+			FROM PROJECT_ROLE_NAME
+			WHERE PJ_ID = #{pjId}	
+		</selectKey>
+		            
+		INSERT INTO PROJECT_ROLE_NAME (
+		    PJ_ROLE_ID,
+		    PJ_ROLE_NAME,
+		    PJ_ID
+		) VALUES (
+		    #{pjRoleId,jdbcType=VARCHAR}
+			, #{pjRoleName,jdbcType=VARCHAR}
+			, #{pjId,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<insert id="insertProjectRole">
+		<foreach collection="resourceIds" item="resourceId" open="INSERT ALL" close="SELECT 1 FROM DUAL" separator=" ">
+			INTO PROJECT_ROLE (
+				PJ_ROLE_ID, RESOURCE_ID
+	    	)VALUES 
+		        (#{pjRoleId}, #{resourceId})
+		</foreach>
+	</insert>
+	
+	<delete id="deleteProjectRole">
+		DELETE FROM PROJECT_ROLE
+	    WHERE 
+	        PJ_ROLE_ID = #{pjRoleId}
+	    AND 
+        	RESOURCE_ID IN
+        <foreach collection="resourceIds" item="resourceId" open="(" separator="," close=")">
+            #{resourceId}
+        </foreach>
+	</delete>
+	
+	<delete id="deleteAllProjectRole">
+		DELETE FROM PROJECT_ROLE
+	    WHERE 
+	        PJ_ROLE_ID = #{pjRoleId}
+	</delete>
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectRoleNameVO" id="roleNameMap" autoMapping="true">
+		<association property="role" javaType="kr.or.ddit.projects.vo.ProjectRoleVO" autoMapping="true"/>
+	</resultMap>
+	
+	<select id="selectProjectRoleName" resultMap="roleNameMap" flushCache="true">
+		SELECT 
+			<include refid="pjRoleNameA" />,
+			<include refid="pjRoleB" />
+		FROM PROJECT_ROLE_NAME A
+		INNER JOIN PROJECT_ROLE B ON (A.PJ_ROLE_ID = B.PJ_ROLE_ID)
+		WHERE A.PJ_ROLE_ID = #{pjRoleId}
+	</select>
+	
+	<delete id="deleteProjectRoleName">
+		DELETE FROM PROJECT_ROLE_NAME
+		WHERE 
+			PJ_ROLE_ID = #{pjRoleId}
+	</delete>
+	
+</mapper>

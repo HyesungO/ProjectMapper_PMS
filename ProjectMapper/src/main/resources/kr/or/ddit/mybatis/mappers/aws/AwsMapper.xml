@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.aws.mapper.AwsMapper">
+	
+	<select id="selectS3Client" resultType="kr.or.ddit.aws.vo.AwsVO">
+		SELECT 
+			ACCESS_KEY_ID
+			, SECRET_ACCESS_KEY
+		FROM AWS
+	</select>
+</mapper>

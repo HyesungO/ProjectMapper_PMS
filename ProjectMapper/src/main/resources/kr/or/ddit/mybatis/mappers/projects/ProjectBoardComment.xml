@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.comment.mapper.ProjectBoardCommentMapper">
+
+
+<sql id="boardCommentColumns">
+  		PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_ID,
+	    PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_PARENT_ID,
+	    PJ_BOARD_COMMENT.PJ_BOARD_ID,
+	    PJ_BOARD_COMMENT.PJ_MEM_ID,
+	    PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_CONTENT,
+	    PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_CREATED_DT,
+	    PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_MODI_DT,
+	    PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_IS_DEL 
+	</sql>
+	
+	
+	<select id="selectBoardCommentList" resultType="kr.or.ddit.projects.vo.PjBoardCommentVO">
+		SELECT 
+			users.USER_NAME,
+			<include refid="boardCommentColumns"/>
+		FROM PJ_BOARD_COMMENT
+		INNER JOIN project_member ON project_member.pj_mem_id = PJ_BOARD_COMMENT.PJ_MEM_ID
+		INNER JOIN users ON users.user_id = project_member.user_id
+		WHERE 
+			PJ_BOARD_ID = #{pjBoardId} 
+			AND PJ_BOARD_COMMENT_IS_DEL = 'N'
+		START WITH 
+		    PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_PARENT_ID IS NULL 
+		CONNECT BY 
+		    PRIOR PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_ID = PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_PARENT_ID 
+	    ORDER SIBLINGS BY 
+	    PJ_BOARD_COMMENT.PJ_BOARD_COMMENT_CREATED_DT
+	</select>
+
+	<select id="selectComment" resultType="kr.or.ddit.projects.vo.PjBoardCommentVO">
+		SELECT
+			USER_NAME,
+			<include refid="boardCommentColumns"/>
+		FROM PJ_BOARD_COMMENT
+		
+		INNER JOIN project_member ON project_member.pj_mem_id = PJ_BOARD_COMMENT.PJ_MEM_ID
+		INNER JOIN users ON (users.user_id = project_member.user_id)
+		WHERE PJ_BOARD_COMMENT_ID = #{pjBoardCommentId}
+		AND PJ_BOARD_COMMENT_IS_DEL = 'N'
+	</select>
+
+
+
+	<insert id="insertBoardComment">
+	<selectKey order="BEFORE" resultType="string" keyProperty="pjBoardCommentId">
+		SELECT 'COMM' || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(PJ_BOARD_COMMENT_ID),5)),0)+1,3,'0')
+			FROM PJ_BOARD_COMMENT
+			</selectKey>
+			INSERT INTO PJ_BOARD_COMMENT (
+		<include refid="boardCommentColumns" />
+		) VALUES (
+			  #{pjBoardCommentId,jdbcType=VARCHAR}
+			, #{pjBoardCommentParentId,jdbcType=VARCHAR}
+			, #{pjBoardId,jdbcType=VARCHAR}
+			, #{pjMemId,jdbcType=VARCHAR}
+			, #{pjBoardCommentContent,jdbcType=VARCHAR}
+			, SYSDATE
+			, #{pjBoardCommentModiDt,jdbcType=DATE}
+			, 'N'
+			)
+	</insert>
+	
+	
+	
+	<update id="updateBoardComment">
+		UPDATE PJ_BOARD_COMMENT
+		SET
+			PJ_BOARD_COMMENT_CONTENT = #{pjBoardCommentContent,jdbcType=VARCHAR}
+			,PJ_BOARD_COMMENT_MODI_DT = SYSDATE
+		WHERE
+        	PJ_BOARD_COMMENT_ID = #{pjBoardCommentId}
+	
+	</update>
+
+
+	<delete id="deleteBoardComment">
+		UPDATE PJ_BOARD_COMMENT
+		SET
+			PJ_BOARD_COMMENT_IS_DEL = 'Y'
+		WHERE
+        	PJ_BOARD_COMMENT_ID = #{pjBoardCommentId}
+	</delete>
+
+
+
+
+</mapper>

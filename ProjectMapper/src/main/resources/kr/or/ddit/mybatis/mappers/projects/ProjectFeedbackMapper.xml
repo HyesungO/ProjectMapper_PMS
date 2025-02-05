@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.dailyTasks.feedback.mapper.FeedbackMapper">
+	
+	<select id="selectFeedbackList" resultType="kr.or.ddit.projects.vo.FeedbackVO">
+		SELECT
+		     feedback_id
+		    ,feedback.dreport_id
+		    ,feedback.pj_mem_id
+		    ,feedback_content
+		    ,feedback_created_dt
+		    ,feedback_updated_dt
+		    ,feedback_is_del
+		    , user_name
+		FROM feedback
+		INNER JOIN project_member ON (project_member.pj_mem_id = feedback.pj_mem_id)
+		INNER JOIN users ON (users.user_id = project_member.user_id)
+		WHERE dreport_id = #{dreportId}
+			AND feedback_is_del = 'N'
+		ORDER BY feedback_id DESC
+	</select>
+	
+	<select id="selectFeedback" resultType="kr.or.ddit.projects.vo.FeedbackVO">
+		SELECT
+		     feedback_id
+		    ,feedback.dreport_id
+		    ,feedback.pj_mem_id
+		    ,feedback_content
+		    ,feedback_created_dt
+		    ,feedback_updated_dt
+		    ,feedback_is_del
+		    , user_name
+		FROM feedback
+		INNER JOIN project_member ON (project_member.pj_mem_id = feedback.pj_mem_id)
+		INNER JOIN users ON (users.user_id = project_member.user_id)
+		WHERE feedback_id = #{feedbackId}
+			AND feedback_is_del = 'N'
+	</select>
+	
+	<insert id="insertFeedback">
+		INSERT INTO feedback (
+		     feedback_id
+		    ,dreport_id
+		    ,pj_mem_id
+		    ,feedback_content
+		    ,feedback_created_dt
+		) VALUES (
+		    (SELECT 'FB' || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(FEEDBACK_ID,3))),0)+1,6,'0')
+				FROM FEEDBACK)
+		    ,#{dreportId}
+		    ,#{pjMemId}
+		    ,#{feedbackContent}
+		    ,SYSDATE
+		)
+	</insert>
+	
+	<update id="updateFeedback">
+		UPDATE feedback
+		SET
+			feedback_content = #{feedbackContent},
+			feedback_updated_dt = SYSDATE
+		WHERE feedback_id = #{feedbackId}
+	</update>
+	
+	<delete id="deleteFeedback">
+		UPDATE feedback
+		SET
+			feedback_is_del = 'Y'
+		WHERE feedback_id = #{feedbackId}
+	</delete>
+	
+</mapper>

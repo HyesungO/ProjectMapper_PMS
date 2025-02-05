@@ -1,0 +1,70 @@
+<div class="container-fluid">
+	<!-- Invoice Wrapper Start -->
+	<div class="card">
+		<div class="col">
+			<div class="col-12">
+				<div class="invoice-card card-style mb-30">
+					<div class="card-header">
+
+						<!-- title 자리 ex) <h2 class="mb-10">TITLE</h2> -->
+						<div class="card-for" id="deTitle"></div>
+
+						<!-- date 자리 ex) <h5 class="text-bold">이슈일자:20/02/2024</h5> -->
+						<div class="col-md-3" id="deDate"></div>
+						
+						<!-- 조회수 -->
+						<div class="col-md-3" id="deViews"></div>
+					</div>
+					<div class="card-footer">
+						<!-- 파일 -->
+						<div class="col-md-4" id="file">
+							<h5 class="text-bold">File</h5>
+						</div>
+					</div>
+					<div class="row card-footer">
+						<!-- 작성자 자리 ex) <h3>John Doe</h3> -->
+						<div class="col-md-4" id="deWriter">
+							<h5 class="text-bold">From</h5>
+						</div>
+
+					</div>
+					<!-- body 자리 ex) <h4>내용 <4>-->
+					<div class="card-footer" style="height: 350px;" id="deBody">
+					</div>
+					<!-- body 끝 -->
+					<div class="card-footer">
+						<button type="button" class="btn btn-square btn-dark"
+							id="deUpdate">수정</button>
+						<button type="button" class="btn btn-square btn-dark"
+							id="deRemove">삭제</button>
+					</div>
+
+					<div class="py-4 px-sm-3 px-lg-5">
+						<div class="card-header">
+							<h5 class="text-bold mb-15">Comment</h5>
+						</div>
+						<div class="card-body">
+							<div class="basic-form">
+								<form>
+									<div class="row align-items-center">
+										<div class="col-md-9">
+											<textarea class="form-control" row="4" id="comment"></textarea>
+										</div>
+										<div class="col-md-3 text-md-end mt-2 mt-md-0">
+											<button type="button" class="btn btn-square btn-dark w-100">작성</button>
+										</div>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- End Card -->
+			</div>
+			<!-- ENd Col -->
+		</div>
+		<!-- End Row -->
+	</div>
+	<!-- Invoice Wrapper End -->
+</div>
+<!-- end container -->

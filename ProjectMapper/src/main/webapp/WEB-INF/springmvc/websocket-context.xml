@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket.xsd
+		http/://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+	">
+<!-- 	<bean scope="prototype" id="kurentoClient" class="org.kurento.client.KurentoClient" factory-method="create" -->
+<!-- 		c:websocketUrl="#{appInfo.kurentoPath}"		 -->
+<!-- 	/> -->
+	
+	
+<!-- 	<bean class="kr.or.ddit.websocket.groupcall.UserRegistry" /> -->
+<!-- 	<bean class="kr.or.ddit.websocket.groupcall.RoomManager"></bean> -->
+<!-- 	<bean id="groupcallHandler" class="kr.or.ddit.websocket.groupcall.CallHandler"/> -->
+	
+	<bean id="echoHandler" class="kr.or.ddit.chat.handler.WebSocketEchoHandler" />
+	<bean id="httpSessionHandshakeInterceptor" class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor" />
+	
+	<websocket:handlers>
+<!-- 		<websocket:mapping handler="groupcallHandler" path="/groupcall"/> -->
+		<websocket:mapping handler="echoHandler" path="/ws/echo/**"/>
+		<websocket:handshake-interceptors>
+			<ref bean="httpSessionHandshakeInterceptor"/>
+		</websocket:handshake-interceptors>
+	</websocket:handlers>
+	
+	<websocket:handlers>
+		<websocket:mapping handler="echoHandler" path="/sockjs/echo/{var1}/{var2}"/>
+		<websocket:handshake-interceptors>
+			<ref bean="httpSessionHandshakeInterceptor"/>
+		</websocket:handshake-interceptors>
+		<websocket:sockjs />
+	</websocket:handlers>
+	
+<!-- 	/stomp : 실시간 양방향 연결 수립 -->
+<!-- 	/app/** : 서버를 경유하는 메시지 발행시 사용할 destination prefix -->
+<!-- 	/topic/** : 브로드캐스팅 메시지 발생시 사용할 destination prefix -->
+<!-- 	/queue/** : 1:1 private 메시지 발생시 사용할 destination prefix -->
+
+	<websocket:message-broker application-destination-prefix="/app" user-destination-prefix="/user">
+		<websocket:stomp-endpoint path="/stomp">
+			<websocket:handshake-interceptors>
+				<ref bean="httpSessionHandshakeInterceptor"/>
+			</websocket:handshake-interceptors>
+			<websocket:sockjs />
+		</websocket:stomp-endpoint>
+		<websocket:simple-broker prefix="/topic,/queue"/>
+	</websocket:message-broker>	
+</beans>
+
+
+
+
+
+
+
+

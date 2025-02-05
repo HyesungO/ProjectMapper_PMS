@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.projects.projectBoards.projectBoard.mapper.ProjectBoardMapper">
+	
+	<sql id="searchFrag">
+		<where>
+			<if test="simpleCondition neq null">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+					<choose>
+						<when test="simpleCondition.searchType eq 'name'">
+							USER_NAME LIKE '%'|| #{simpleCondition.searchWord} ||'%'
+						</when>
+<!-- 						<when test="simpleCondition.searchType eq 'role'"> -->
+<!-- 							INSTR(USER_ROLE, #{simpleCondition.searchWord})||'%' -->
+<!-- 						</when> -->
+						<otherwise>
+							INSTR(USER_ROLE, #{simpleCondition.searchWord}) > 0
+						</otherwise>
+					</choose>
+				</if>
+			</if>
+		</where>
+	</sql>
+	
+	<sql id = "boardColumns" >
+	PJ_BOARD_ID,
+	PJ_MEM_ID,
+	PJ_ID,
+	PJ_BOARD_TITLE,
+	PJ_BOARD_CONTENT,
+	PJ_BOARD_CREATED_DT,
+	PJ_BOARD_MODI_DT,
+	PJ_BOARD_ST_CODE,
+	PJ_BOARD_CATE_CODE,
+	PJ_BOARD_VIEW_COUNT,
+	PJ_BOARD_AFI,
+	PJ_BOARD_IS_DEL	
+	</sql>
+
+	<select id="selectTotalBoard" resultType="int">
+		SELECT COUNT(*)
+		FROM PROJECT_BOARD
+		WHERE PJ_ID = #{pjId}
+		AND PJ_BOARD_IS_DEL = 'N'
+	</select>	
+
+	<select id="selectProjectBoardList" resultType="kr.or.ddit.projects.vo.ProjectBoardVO">
+		SELECT *
+		FROM (
+			SELECT ROWNUM AS RNUM,
+				<include refid="boardColumns"/>
+			FROM PROJECT_BOARD
+			WHERE PJ_ID = #{pjId}
+			AND PJ_BOARD_IS_DEL = 'N'
+		)
+		<where>
+			<if test="paging neq null">
+	<!-- 		특수기호 문자화 할때 / where문을 붙이면 알아서 붙여줌 -->
+			<![CDATA[
+			RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+			]]>
+			</if>			
+		</where>
+	</select>
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectBoardVO" id="pjMap">
+		<id property="pjBoardId" column="PJ_BOARD_ID" />
+		<result property="pjBoardAfi" column="PJ_BOARD_AFI" />
+		<association property="atchFile" column="PJ_BOARD_AFI"
+			select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+			<!-- 대신 조인할 수 있다 다른곳에 있는 쿼리문을 사용 -->
+	</resultMap>
+	
+	<select id="selectProjectBoard" resultMap="pjMap">
+		SELECT
+			<include refid="boardColumns"/>
+		FROM PROJECT_BOARD
+		WHERE PJ_BOARD_ID = #{pjBoardId}
+	</select>
+	
+	
+	<insert id="insertProjectBoard">
+		<selectKey order="BEFORE" keyProperty="pjBoardId" resultType="string">
+			SELECT 'PB' ||
+				LPAD( NVL( TO_NUMBER( SUBSTR(MAX(PJ_BOARD_ID), 3) ), 0) + 1, 6, '0')
+			FROM PROJECT_BOARD
+		</selectKey>
+	
+		INSERT INTO PROJECT_BOARD(
+			PJ_BOARD_ID,
+			PJ_MEM_ID,
+			PJ_ID,
+			PJ_BOARD_TITLE,
+			PJ_BOARD_CONTENT,
+			PJ_BOARD_CATE_CODE,
+			PJ_BOARD_AFI
+		)VALUES (
+			#{pjBoardId,jdbcType=VARCHAR}
+		  , #{pjMemId,jdbcType=VARCHAR}
+		  , #{pjId,jdbcType=VARCHAR}
+		  , #{pjBoardTitle, jdbcType=VARCHAR}
+		  , #{pjBoardContent,jdbcType=CLOB}
+		  , #{pjBoardCateCode, jdbcType=CHAR}
+		  , #{pjBoardAfi,jdbcType=NUMERIC}
+		)
+	</insert>
+	
+	<update id="updateProjectBoard">
+		UPDATE PROJECT_BOARD
+		SET
+			PJ_BOARD_TITLE = #{pjBoardTitle,jdbcType=VARCHAR},
+			PJ_BOARD_CONTENT = #{pjBoardContent,jdbcType=CLOB},
+			PJ_BOARD_MODI_DT = SYSDATE
+			<if test="pjBoardAfi neq null">
+				, PJ_BOARD_AFI = #{pjBoardAfi,jdbcType=NUMERIC}
+			</if>
+		WHERE
+			PJ_BOARD_ID = #{pjBoardId}		
+	</update>
+	
+	<update id="deleteProjectBoard">
+		UPDATE PROJECT_BOARD
+		SET
+			PJ_BOARD_IS_DEL = 'Y'
+		WHERE
+			PJ_BOARD_ID = #{pjId}		
+	</update>
+	
+	
+</mapper>

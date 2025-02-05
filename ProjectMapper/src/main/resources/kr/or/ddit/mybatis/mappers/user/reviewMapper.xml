@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.users.review.mapper.ReviewMapper">
+	<sql id="reviewColumns">
+		REVIEW_ID,
+	    REVIEWER_ID,
+	    REVIEWED_ID,
+	    REVIEW_CREATED_DT,
+	    REVIEW_MODI_DT,
+	    REVIEW_IS_DEL,
+	    REVIEW_SUMMARY,
+	    COMM_SCORE,
+	    COLLAB_SCROE,
+	    PROBLEM_SCROE,
+	    EXPERT_SCROE,
+	    PERFOR_SCROE,
+	    SATISFY_SCROE,
+	    PJ_ID
+	</sql>
+	
+  <select id="selectReviewedList" resultType="kr.or.ddit.projects.vo.ReviewVO">
+  SELECT
+  		REVIEW_ID,
+	    REVIEWER_ID,
+	    REVIEWED_ID,
+	    REVIEW_CREATED_DT,
+	    REVIEW_MODI_DT,
+	    REVIEW_IS_DEL,
+	    REVIEW_SUMMARY,
+	    COMM_SCORE,
+	    COLLAB_SCROE,
+	    PROBLEM_SCROE,
+	    EXPERT_SCROE,
+	    PERFOR_SCROE,
+	    SATISFY_SCROE,
+	    PJ_ID
+  FROM 
+  		REVIEW
+  WHERE  
+  		REVIEWED_ID = #{reviewedId}
+  		AND REVIEW_IS_DEL = 'N'
+  	
+  </select>
+  <select id="selectReviewerList" resultType="kr.or.ddit.projects.vo.ReviewVO">
+  SELECT
+  		REVIEW_ID,
+	    REVIEWER_ID,
+	    REVIEWED_ID,
+	    REVIEW_CREATED_DT,
+	    REVIEW_MODI_DT,
+	    REVIEW_IS_DEL,
+	    REVIEW_SUMMARY,
+	    COMM_SCORE,
+	    COLLAB_SCROE,
+	    PROBLEM_SCROE,
+	    EXPERT_SCROE,
+	    PERFOR_SCROE,
+	    SATISFY_SCROE,
+	    PJ_ID
+  FROM 
+  		REVIEW
+  WHERE  
+  		REVIEWER_ID = #{reviewerId}
+  		AND REVIEW_IS_DEL = 'N'
+  </select>
+  <select id="selectReviewerListWithpjId" resultType="kr.or.ddit.projects.vo.ReviewVO">
+  SELECT
+	    REVIEW_ID,
+	    REVIEWER_ID,
+	    REVIEWED_ID,
+	    REVIEW_CREATED_DT,
+	    REVIEW_MODI_DT,
+	    REVIEW_IS_DEL,
+	    REVIEW_SUMMARY,
+	    COMM_SCORE,
+	    COLLAB_SCROE,
+	    PROBLEM_SCROE,
+	    EXPERT_SCROE,
+	    PERFOR_SCROE,
+	    SATISFY_SCROE,
+	    PJ_ID
+	FROM 
+  		REVIEW
+  WHERE PJ_ID = #{pjId}
+  AND  REVIEWER_ID = #{reviewerId}
+  AND REVIEW_IS_DEL = 'N'
+  </select>
+  
+  <select id="selectReview" resultType="kr.or.ddit.projects.vo.ReviewVO">
+  	SELECT
+	    REVIEW_ID,
+	    REVIEWER_ID,
+	    REVIEWED_ID,
+	    REVIEW_CREATED_DT,
+	    REVIEW_MODI_DT,
+	    REVIEW_IS_DEL,
+	    REVIEW_SUMMARY,
+	    COMM_SCORE,
+	    COLLAB_SCROE,
+	    PROBLEM_SCROE,
+	    EXPERT_SCROE,
+	    PERFOR_SCROE,
+	    SATISFY_SCROE,
+	    PJ_ID
+	FROM 
+  		REVIEW
+  WHERE REVIEW_ID = #{reviewId}
+  AND REVIEW_IS_DEL = 'N'
+  </select>
+  
+  <insert id="insertReview">
+  		<selectKey order="BEFORE" resultType="string" keyProperty="reviewId">
+			SELECT 'RV' || LPAD(
+			NVL(MAX(TO_NUMBER(SUBSTR(REVIEW_ID, 3, 6))), 0) + 1, 6,'0' ) AS
+			NEW_REVIEW_ID
+			FROM REVIEW
+			WHERE REVIEW_ID LIKE 'RV%'
+		</selectKey>
+	INSERT INTO REVIEW (
+		
+	    REVIEW_ID,
+	    REVIEWER_ID,
+	    REVIEWED_ID,
+	    REVIEW_CREATED_DT,
+	    REVIEW_IS_DEL,
+	    REVIEW_SUMMARY,
+	    COMM_SCORE,
+	    COLLAB_SCROE,
+	    PROBLEM_SCROE,
+	    EXPERT_SCROE,
+	    PERFOR_SCROE,
+	    SATISFY_SCROE,
+	    PJ_ID
+	) VALUES (
+	   	#{reviewId,jdbcType=VARCHAR}
+		, #{reviewerId,jdbcType=VARCHAR}
+		, #{reviewedId,jdbcType=VARCHAR}
+		, SYSDATE
+		, 'N'
+		, #{reviewSummary,jdbcType=VARCHAR}
+		, #{commScore,jdbcType=NUMERIC}
+		, #{collabScroe,jdbcType=NUMERIC}
+		, #{problemScroe,jdbcType=NUMERIC}
+		, #{expertScroe,jdbcType=NUMERIC}
+		, #{perforScroe,jdbcType=NUMERIC}
+		, #{satisfyScroe,jdbcType=NUMERIC}
+		, #{pjId,jdbcType=VARCHAR}
+	)
+  
+  </insert>
+  
+  <update id="updateReview">
+  	UPDATE REVIEW
+		SET
+			REVIEW_MODI_DT = SYSDATE
+			,REVIEW_SUMMARY = #{reviewSummary,jdbcType=VARCHAR}
+			,COMM_SCORE = #{commScore,jdbcType=NUMERIC}
+			,COLLAB_SCROE = #{collabScroe,jdbcType=NUMERIC}
+			,PROBLEM_SCROE = #{problemScroe,jdbcType=NUMERIC}
+			,EXPERT_SCROE = #{expertScroe,jdbcType=NUMERIC}
+			,PERFOR_SCROE = #{perforScroe,jdbcType=NUMERIC}
+			,SATISFY_SCROE = #{satisfyScroe,jdbcType=NUMERIC}
+		WHERE
+		    REVIEW_ID = #{reviewId}
+  </update>
+  
+  <delete id="deleteReview">
+  	UPDATE REVIEW
+		SET
+		REVIEW_IS_DEL = 'Y'
+		WHERE
+		    REVIEW_ID = #{reviewId}
+  	
+  </delete>
+</mapper>

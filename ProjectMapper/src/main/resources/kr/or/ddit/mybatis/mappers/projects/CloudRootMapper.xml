@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.projects.cloud.mapper.CloudRootMapper">
+	
+	<insert id="insertCloudRoot">
+		INSERT INTO CLOUD_ROOT (
+		    CLOUD_ROOT_ID,
+		    PJ_ID,
+		    CLOUD_DEFAULT_CAPACITY,
+		    CLOUD_USED_CAPACITY
+		) VALUES (
+		      #{cloudRootId,jdbcType=VARCHAR}
+		    , #{pjId,jdbcType=VARCHAR}
+		    , 104857600
+		    , 0
+		)
+	</insert>
+	
+	<update id="updateAddUsedCapa">
+		UPDATE CLOUD_ROOT
+		SET
+		    CLOUD_USED_CAPACITY = CLOUD_USED_CAPACITY + #{fileByte}
+		WHERE
+		    pj_id = #{pjId}
+	</update>
+	
+	<update id="updateSubUsedCapa">
+		UPDATE CLOUD_ROOT
+		SET
+		    CLOUD_USED_CAPACITY = CLOUD_USED_CAPACITY - #{fileByte}
+		WHERE
+		    pj_id = #{pjId}
+	</update>
+</mapper>

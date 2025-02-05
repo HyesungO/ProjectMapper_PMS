@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.users.Invite.mapper.InviteMapper">
+
+
+	<resultMap type="kr.or.ddit.projects.vo.ProjectInviteVO" id="inviteList" autoMapping="true">
+	    <id property="pjInviteId" column="PJ_INVITE_ID" /> 
+	    
+	    <result property="pjProfileAfi" column="PJ_PROFILE_AFI" />
+	    
+		<association property="atchFile" column="PJ_PROFILE_AFI" select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+	    
+	    
+	    
+	    <association property="project" javaType="kr.or.ddit.projects.vo.ProjectVO" autoMapping="true" />
+	    
+	    <association property="pjmember" javaType="kr.or.ddit.projects.vo.ProjectMemberVO" autoMapping="true" />
+		    
+	    <association property="user" javaType="kr.or.ddit.users.vo.UsersVO" autoMapping="true" />
+	    
+	    <association property="pjInviteResp" javaType="kr.or.ddit.vo.CodeVO"></association>
+	    
+	    <association property="pjCate" javaType="kr.or.ddit.vo.CodeVO"></association>
+	</resultMap>
+
+
+
+
+
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(*)
+			FROM PROJECT_INVITE
+		WHERE PJ_INVITEE_USER_ID = #{pjInviteeUserId}
+	</select>
+	
+	
+	
+	<select id="selectProjectInviteList" resultMap="inviteList">
+	SELECT B.*
+			FROM
+			(
+			SELECT ROWNUM RNUM, A.*
+				FROM (	
+				SELECT 
+				    INVITEE.USER_NAME AS INVITEE_USER_NAME,
+				    INVITER.USER_NAME AS INVITER_USER_NAME,
+				    PI.PJ_INVITE_ID,
+				    PI.PJ_INVITE_RESP_DT,
+				    PI.PJ_INVITE_SENT_DT,
+				    PJ.PJ_NAME,
+				    PJ.PJ_DESCRIPTION,
+				    CODELC.CODE_NAME AS PJ_INVITE_RESP_CODE,
+				    PJ.PJ_PROFILE_AFI
+				FROM PROJECT_INVITE PI
+				INNER JOIN USERS INVITEE ON PI.PJ_INVITEE_USER_ID = INVITEE.USER_ID
+				INNER JOIN PROJECT_MEMBER PM ON PI.PJ_INVITER_USER_ID = PM.PJ_MEM_ID
+				INNER JOIN USERS INVITER ON PM.USER_ID = INVITER.USER_ID
+				INNER JOIN PROJECT PJ ON PJ.PJ_ID = PM.PJ_ID
+				INNER JOIN CODE CODELC ON CODELC.CODE_ID = PI.PJ_INVITE_RESP_CODE
+				WHERE PI.PJ_INVITEE_USER_ID = #{pjInviteeUserId}
+				AND PI.PJ_INVITE_RESP_CODE IN ('P0101', 'P0102')
+				ORDER BY PJ_INVITE_SENT_DT
+
+
+					
+				) A
+		) B
+				WHERE RNUM BETWEEN #{paging.startRow} AND #{paging.endRow}
+		
+	</select>
+	
+	
+	<select id="selectProjectInvite" resultMap="inviteList">
+	
+		SELECT 
+			PI.PJ_INVITER_USER_ID,
+			PI.PJ_INVITEE_USER_ID,
+		    INVITEE.USER_NAME AS INVITEE_USER_NAME,
+		    INVITER.USER_NAME AS INVITER_USER_NAME,
+		    PI.PJ_INVITE_ID,
+            CODELC.CODE_NAME AS PJ_INVITE_RESP_CODE,
+		    CODE.CODE_NAME, 
+		    PI.PJ_INVITE_RESP_DT,
+		    PI.PJ_INVITE_SENT_DT,
+		    PJ.PJ_NAME,
+		    PJ.PJ_DESCRIPTION,
+		    PJ.PJ_PROFILE_AFI,
+		    PJ.PJ_CATE_ID,
+		    PJ.PJ_CREATED_DT,
+		    PJ.PJ_END_DT,
+		    PJ.PJ_ID,
+		    PJ.PJ_PROGRESS,
+		    PJ.PJ_VIEW_COUNT,
+		    PM.USER_ID,
+		    PM.PJ_ROLE_ID,
+			PM.PJ_MEM_ROLE_TYPE_CODE,
+			PM.PJ_MEM_LEAVE_ST_CODE,
+			PM.PJ_MEM_JOIN_DATE,
+			PM.PJ_ID,
+			USERS.USER_PROFILE_AFI
+		    USERS.USER_NAME AS PJ_USER_NAME 
+		FROM PROJECT_INVITE PI
+		INNER JOIN USERS INVITEE ON PI.PJ_INVITEE_USER_ID = INVITEE.USER_ID
+		INNER JOIN PROJECT_MEMBER PM ON PI.PJ_INVITER_USER_ID = PM.PJ_MEM_ID
+		INNER JOIN USERS INVITER ON PM.USER_ID = INVITER.USER_ID
+		INNER JOIN PROJECT PJ ON PJ.PJ_ID = PM.PJ_ID
+		INNER JOIN CODE CODE ON CODE.CODE_ID = PJ.PJ_TYPE_CODE
+		INNER JOIN USERS USERS ON USERS.USER_ID = PJ.USER_ID
+        INNER JOIN CODE CODELC ON CODELC.CODE_ID = PI.PJ_INVITE_RESP_CODE
+		WHERE PI.PJ_INVITE_ID = #{pjInviteID}
+
+	
+	</select>
+
+
+
+	<insert id="insertProjectInvite">
+    <selectKey order="BEFORE" resultType="string" keyProperty="pjMemId">
+        SELECT #{pjId} || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(PJ_MEM_ID), 9)), 0) + 1, 4, '0')
+       	 FROM PROJECT_MEMBER
+        WHERE PJ_ID = #{pjId}
+    </selectKey>
+    INSERT INTO PROJECT_MEMBER (
+        PJ_MEM_ID,
+        PJ_ID,
+        USER_ID, <!-- 초대 받은 사람의 USER_ID -->
+        PJ_MEM_JOIN_DATE,
+        PJ_MEM_LEAVE_ST_CODE,
+        PJ_MEM_ROLE_TYPE_CODE,
+        PJ_ROLE_ID
+    ) VALUES (
+        #{pjMemId,jdbcType=VARCHAR},
+        #{pjId,jdbcType=VARCHAR},
+        #{userId,jdbcType=VARCHAR}, <!-- 초대받은 사람의 USER_ID를 여기서 전달 -->
+        TO_CHAR(SYSDATE, 'YYYYMMDD'),
+        'N',
+        #{pjMemRoleTypeCode,jdbcType=CHAR},
+        #{pjRoleId,jdbcType=VARCHAR}
+    )
+</insert>
+
+
+
+
+
+	<update id="updateProjectInvite">
+	
+	UPDATE PROJECT_INVITE
+	    SET
+	    PJ_INVITE_RESP_CODE = 'P0102',
+	    PJ_INVITE_RESP_DT = SYSDATE
+	WHERE PJ_INVITE_ID = #{pjInviteId}
+		
+	
+	</update>
+	<update id="updateProjectInvite2">
+	
+	UPDATE PROJECT_INVITE
+	    SET
+	    PJ_INVITE_RESP_CODE = 'P0103',
+	    PJ_INVITE_RESP_DT = SYSDATE
+	WHERE PJ_INVITE_ID = #{pjInviteId}
+		
+	
+	</update>
+
+
+
+
+
+
+</mapper>

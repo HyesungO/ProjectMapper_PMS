@@ -1,0 +1,104 @@
+@charset "UTF-8";
+
+
+.form-container {
+  width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px; 
+  flex-wrap: wrap; 
+}
+
+.row .field {
+  display: flex;
+  flex-direction: row; 
+  align-items: center; 
+  gap: 10px; 
+  width: 23%; 
+}
+
+.row .field label {
+  font-weight: bold;
+}
+
+.row .field div {
+  flex: 1; 
+}
+
+.row-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start; 
+}
+
+.textarea-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; 
+}
+
+.image-container {
+  width: 45%;
+  display: flex;
+  flex-direction: column; 
+  justify-content: center; 
+  align-items: center; 
+  text-align: center; 
+}
+
+.image-container img {
+	margin-top: 10px;
+    width: 80%;
+    max-height: 300px;
+    height: 200px;
+    border: 1px solid #ccc;
+    border-radius: 5px
+}
+
+label {
+  font-weight: bold;
+  color: #333;
+  display: block; 
+  margin-bottom: 5px; 
+}
+
+.textarea-container label {
+  margin-top: 20px;
+}
+
+.image-container label {
+  margin-top: 20px;
+}
+
+.fixed-textarea {
+  width: 100%;  
+  resize: none; 
+  border: 1px solid #ccc; 
+  border-radius: 4px; 
+  padding: 8px; 
+  font-size: 14px; 
+}
+
+/* 버튼 컨테이너 스타일 */
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px; 
+  margin-top: 20px; 
+}
+
+/* 버튼 스타일 */
+.button-container .btn {
+  margin-top: 30px; 
+}

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.projectRecruits.application.mapper.ApplicationMapper">
+
+	
+	
+<resultMap type="kr.or.ddit.projects.vo.ApplicationVO" id="applicationList" autoMapping="true">
+    <id property="appId" column="APP_ID"/>
+    <association property="recruit" javaType="kr.or.ddit.projects.vo.ProjectRecruitVO" autoMapping="true" />
+    
+    
+    <association property="position" javaType="kr.or.ddit.projects.vo.PositionVO" autoMapping="true"/>
+    
+    
+    <association property="user" javaType="kr.or.ddit.users.vo.UsersVO" autoMapping="true"/>
+    
+    
+    
+<!--     <association property="edh" javaType="kr.or.ddit.users.vo.EducationHistoryVO" autoMapping="true"/> -->
+    
+<!--     <association property="ed" javaType="kr.or.ddit.users.vo.EducationVO" autoMapping="true"/> -->
+    
+<!--     <association property="career" javaType="kr.or.ddit.users.vo.CareerVO" autoMapping="true"/> -->
+    
+    
+<!--     <association property="eduLevelCode" javaType="kr.or.ddit.vo.CodeVO"/> -->
+<!--     <association property="eduLevelCategoryCode" javaType="kr.or.ddit.vo.CodeVO"/> -->
+<!--     <association property="eduGradStCodeCode" javaType="kr.or.ddit.vo.CodeVO"/> -->
+    
+    
+</resultMap>
+
+	
+	<!-- paging -->
+	
+	<select id="selectTotalBoard" resultType="int">
+	SELECT COUNT(*)
+		FROM APPLICATION 
+		
+	</select>
+	
+
+	
+	<select id="selectPagingApplicationList" resultMap="applicationList">
+	
+	SELECT B.*
+			FROM
+			(
+			SELECT ROWNUM RNUM, A.*
+				FROM (
+				SELECT 
+				    PR.PJ_ID, 
+				    APP.APP_ID,
+				    PR.PJ_RECRUIT_TITLE ,
+				    POS.POSITION_NAME ,
+				    USERS.USER_NAME,
+				    USER_EMAIL,
+					USER_PROFILE_AFI,
+					USER_REGIST_DATE,
+				    CODE.CODE_NAME,
+				    APP.APP_INTERVIEW_DT ,
+				    APP.APP_CONTRACT_DATE ,
+				    APP.APP_STATUS_CODE
+				FROM 
+				    PROJECT_RECRUIT PR
+				JOIN POSITION POS ON PR.PJ_RECRUIT_ID = POS.PJ_RECRUIT_ID
+				JOIN APPLICATION APP ON POS.POSITION_ID = APP.POSITION_ID
+				JOIN CODE CODE ON CODE.CODE_ID = APP.APP_STATUS_CODE
+				JOIN USERS USERS ON USERS.USER_ID = APP.USER_ID
+				
+				WHERE PR.PJ_ID = #{pjId}
+				ORDER BY APP.APP_INTERVIEW_DT
+				
+				) A
+		) B
+				WHERE RNUM BETWEEN #{paging.startRow} AND #{paging.endRow}
+				
+				
+				
+	</select>
+	
+	
+	
+<select id="selectApplication" resultMap="applicationList">
+	   SELECT 
+	    A.APP_ID,
+	    A.USER_ID,
+	    A.POSITION_ID,
+	    A.APP_STATUS_CODE,
+	    A.APP_INTERVIEW_DT,
+	    P.POSITION_NAME,
+	    P.POSITION_REQ,
+	    PR.PJ_RECRUIT_TITLE,
+	    PR.PJ_RECRUIT_CONTENT,
+	    PR.PJ_ESTIMATED_START_DATE,
+	    PR.PJ_ESTIMATED_END_DATE,
+	    PR.PJ_IS_OUTSOURCED,
+	    PR.PJ_OUTSOURCING_COST,
+	    CODE.CODE_NAME,
+	    USERS.USER_NAME,
+	    USER_EMAIL,
+	    USER_PROFILE_AFI,
+	    USER_REGIST_DATE
+	FROM APPLICATION A
+	INNER JOIN POSITION P ON P.POSITION_ID = A.POSITION_ID
+	INNER JOIN PROJECT_RECRUIT PR ON PR.PJ_RECRUIT_ID = P.PJ_RECRUIT_ID
+	INNER JOIN CODE CODE ON CODE.CODE_ID = A.APP_STATUS_CODE
+	INNER JOIN USERS USERS ON USERS.USER_ID = A.USER_ID
+
+    WHERE A.APP_ID = #{appId}  
+</select>
+
+	
+	
+	
+	
+	
+	
+	<update id="updateApplication">
+	    UPDATE APPLICATION
+	    SET 
+	    	APP_INTERVIEW_DT = #{appInterviewDt},
+	    	APP_CONTRACT_CODE = 'Y'
+	    WHERE APP_ID = #{appId}
+	</update>
+	
+	
+	
+	<update id="updateApplication2">
+	    UPDATE APPLICATION
+	    SET 
+	        APP_STATUS_CODE = 'A0202',
+	        APP_CONTRACT_DATE = SYSDATE
+	    WHERE APP_ID = #{appId}
+	</update>
+	
+	
+	<update id="updateApplicatio3">
+	    UPDATE APPLICATION
+	    SET 
+	        APP_STATUS_CODE = 'A0203',
+	        APP_CONTRACT_DATE = SYSDATE
+	    WHERE APP_ID = #{appId}
+	</update>
+
+	
+	
+	
+	
+	
+	
+	
+	
+</mapper>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.projects.projectInvite.mapper.ProjectInviteMapper">
+	
+	<sql id="inviteColunms">
+		PJ_INVITE_ID,
+	    PJ_INVITER_USER_ID,
+	    PJ_INVITEE_USER_ID,
+	    PJ_INVITE_RESP_CODE,
+	    PJ_INVITE_SENT_DT,
+	    PJ_INVITE_RESP_DT
+	</sql>
+	<sql id="inviteColunmsB">
+		B.PJ_INVITE_ID,
+	    B.PJ_INVITER_USER_ID,
+	    B.PJ_INVITEE_USER_ID,
+	    B.PJ_INVITE_RESP_CODE,
+	    B.PJ_INVITE_SENT_DT,
+	    B.PJ_INVITE_RESP_DT
+	</sql>
+	<sql id="usersColunmsA">
+		A.USER_ID
+		,A.USER_EMAIL
+		,A.USER_NAME
+		,A.USER_PASSWORD
+		,A.USER_DATE_OF_BIRTH
+		,A.USER_ADDR1
+		,A.USER_ADDR2
+		,A.USER_PROFILE_AFI
+		,A.USER_PHONE_NUMBER
+		,A.USER_ST_CODE
+		,A.USER_ROLE
+		,A.USER_REGIST_DATE
+		,A.USER_BS_REGIST_NO
+		,A.USER_BS_AFI
+	</sql>
+	<insert id="insertProjectInvite">
+	<selectKey order="BEFORE" resultType="string" keyProperty="pjInviteId">
+			SELECT 'PI' || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(PJ_INVITE_ID),3)),0)+1,7,'0')
+			FROM PROJECT_INVITE
+	</selectKey>
+		INSERT INTO PROJECT_INVITE (
+    		<include refid="inviteColunms" />
+		) VALUES (
+		  #{pjInviteId,jdbcType=VARCHAR}
+		, #{pjInviterUserId,jdbcType=VARCHAR}
+		, #{pjInviteeUserId,jdbcType=VARCHAR}
+		, 'P0101'
+		, SYSDATE
+		, #{pjInviteRespDt,jdbcType=DATE}
+		)
+	</insert>
+	
+	<resultMap type="UsersVO" id="userMap" autoMapping="true">
+		<association property="pjInvite" autoMapping="true" />
+	</resultMap>
+	<select id="searchUserInvite" resultMap="userMap">
+		SELECT 
+			<include refid="usersColunmsA" />,
+			<include refid="inviteColunmsB" />
+		FROM USERS A
+		LEFT OUTER JOIN PROJECT_INVITE B ON (A.USER_ID = B.PJ_INVITEE_USER_ID)
+		WHERE A.USER_ID = #{userId}
+	</select>
+</mapper>

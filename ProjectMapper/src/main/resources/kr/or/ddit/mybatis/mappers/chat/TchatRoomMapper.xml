@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.chat.tchatRoom.mapper.TchatRoomMapper">
+  
+ 
+  <select id="selectTchatRoomList" resultType="kr.or.ddit.chat.vo.TChatRoomVO">
+    SELECT
+      A.TCHAT_ROOM_ID,
+	  A.TCHAT_ROOM_DT,
+	  A.TCHAT_ROOM_IS_DEL,
+	  A.TCHAT_ROOM_NAME,
+	  A.TCHAT_ROOM_LAST_MSG,
+	  A.TCHAT_ROOM_MODI_DT,
+	  B.USER_ID,
+	  B.TCHAT_USER_IS_DEL
+    FROM TCHAT_ROOM A
+      INNER JOIN TCHAT_PARTICIPANT B ON (A.TCHAT_ROOM_ID = B.TCHAT_ROOM_ID)
+    WHERE A.TCHAT_ROOM_ID = #{tchatRoomId}
+    
+  </select>
+<!--   채팅방 상세조회하는 쿼리 -->
+  <select id="selectTchatRoom" resultType="kr.or.ddit.chat.vo.TChatRoomVO">
+  	SELECT
+      TCHAT_ROOM_ID,
+      TCHAT_ROOM_DT,
+      TCHAT_ROOM_IS_DEL,
+      TCHAT_ROOM_NAME,
+      TCHAT_ROOM_MODI_DT,
+      TCHAT_ROOM_LAST_MSG
+    FROM
+      TCHAT_ROOM 
+    WHERE TCHAT_ROOM_ID = #{tchatRoomId}
+  </select>
+<!--   채팅방을 만드는 쿼리 -->
+  <insert id="insertTchatRoom" useGeneratedKeys="true" keyProperty="tchatRoomvo.tchatRoomId" >
+  <selectKey order="BEFORE" keyProperty="tchatRoomvo.tchatRoomId" resultType="string">
+	    SELECT 'TR' || LPAD(
+	      NVL(MAX(TO_NUMBER(SUBSTR(TCHAT_ROOM_ID, 3, 6))), 0) + 1, 6, '0') AS TCHAT_ROOM_ID
+	    FROM TCHAT_ROOM
+	    WHERE TCHAT_ROOM_ID LIKE 'TR%'
+	  </selectKey>
+	  INSERT INTO TCHAT_ROOM (
+	    TCHAT_ROOM_ID,
+	    TCHAT_ROOM_NAME,
+	    TCHAT_ROOM_DT,
+	    TCHAT_ROOM_IS_DEL
+	  ) VALUES (
+	    #{tchatRoomvo.tchatRoomId,jdbcType=VARCHAR},
+	    #{tchatRoomvo.tchatRoomName,jdbcType=VARCHAR},
+	    SYSDATE,
+	    'N'
+	  )
+	</insert>
+  <update id="updateLastMsg">
+  UPDATE TCHAT_ROOM
+		SET
+		    TCHAT_ROOM_LAST_MSG = #{tchatContent,jdbcType=VARCHAR}
+		    ,TCHAT_ROOM_MODI_DT = SYSDATE
+		WHERE
+		    TCHAT_ROOM_ID = #{tchatRoomId}
+  </update>
+  
+  <delete id="deleteTchatRoom">
+  </delete>
+  
+<!--   /////////////////////////////////////////////////유저////////////////////////////////////////////////////////////// -->
+
+
+	 <resultMap type="kr.or.ddit.chat.vo.TchatParticipantVO" id="mytchatRoomMap" autoMapping="true">
+	    <id property="tchatRoomId" column="TCHAT_ROOM_ID" />
+	    <association property="tchatRoom" javaType="kr.or.ddit.chat.vo.TChatRoomVO" autoMapping="true" />
+	 </resultMap>
+	  
+
+
+	<select id="selectMyTchatRoomList" resultMap="mytchatRoomMap">
+	SELECT
+	    A.USER_ID,
+	    A.TCHAT_ROOM_ID,
+	    A.TCHAT_USER_IS_DEL,
+	    B.TCHAT_ROOM_DT,
+	    B.TCHAT_ROOM_IS_DEL,
+	    B.TCHAT_ROOM_NAME,
+	    B.TCHAT_ROOM_LAST_MSG
+	FROM
+	    TCHAT_PARTICIPANT A
+	    INNER JOIN TCHAT_ROOM B ON (B.TCHAT_ROOM_ID = A.TCHAT_ROOM_ID)
+	WHERE A.USER_ID = #{userid}
+	ORDER BY B.TCHAT_ROOM_MODI_DT DESC
+	</select>
+	
+	<resultMap type="kr.or.ddit.chat.vo.TchatParticipantVO" id="tchatMap" autoMapping="true">
+		<association property="user" autoMapping="true" javaType="UsersVO"></association>
+		<association property="afdVo" autoMapping="true" javaType="AtchFileDetailVO" />
+	</resultMap>
+	
+	<select id="readtchatPartList" resultMap="tchatMap">
+	SELECT
+	   	A.USER_ID,
+	    TCHAT_ROOM_ID,
+	    TCHAT_USER_IS_DEL
+	    ,B.USER_NAME
+        ,B.USER_PROFILE_AFI
+	    ,C.FILE_NAME
+	FROM
+	    TCHAT_PARTICIPANT A
+        INNER JOIN USERS B ON ( A.USER_ID = B.USER_ID)
+        LEFT OUTER JOIN ATCH_FILE_DETAIL C ON (B.USER_PROFILE_AFI = C.ATCH_FILE_ID)
+	WHERE TCHAT_ROOM_ID = #{tchatRoomId}
+	
+	</select>
+	
+	<insert id="insertchatPart">
+	INSERT INTO TCHAT_PARTICIPANT (
+	    USER_ID,
+	    TCHAT_ROOM_ID,
+	    TCHAT_USER_IS_DEL
+	) VALUES (
+	      #{userId,jdbcType=VARCHAR}
+		, #{tchatRoomId,jdbcType=VARCHAR}
+		, 'Y'
+	)
+	</insert>
+	
+	<delete id="deletetchatMem">
+	    DELETE FROM TCHAT_PARTICIPANT
+	    WHERE USER_ID = #{userId}
+	    AND TCHAT_ROOM_ID = #{tchatRoomId}
+	</delete>
+
+
+</mapper>

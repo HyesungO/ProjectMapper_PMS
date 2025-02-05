@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.projects.config.mapper.ProjectMemberMapper">
+	
+	<sql id="projectMemberColumns">
+			PJ_MEM_ID,
+		    PJ_ID,
+		    USER_ID,
+		    PJ_MEM_JOIN_DATE,
+		    PJ_MEM_LEAVE_ST_CODE,
+		    PJ_MEM_ROLE_TYPE_CODE,
+		    PJ_ROLE_ID
+	</sql>
+	<sql id="projectMemberColumnsA">
+			A.PJ_MEM_ID,
+		    A.PJ_ID,
+		    A.USER_ID,
+		    A.PJ_MEM_JOIN_DATE,
+		    A.PJ_MEM_LEAVE_ST_CODE,
+		    A.PJ_MEM_ROLE_TYPE_CODE,
+		    A.PJ_ROLE_ID
+	</sql>
+	<sql id="projectColumns">
+	    B.PJ_NAME,
+	    B.PJ_DESCRIPTION,
+	    B.PJ_PROFILE_AFI,
+	    B.PJ_ST_CODE,
+	    B.PJ_CREATED_DT,
+	    B.PJ_END_DT,
+	    B.PJ_TYPE_CODE
+	</sql>
+	<sql id="usersColumnsB">
+		B.USER_EMAIL,
+		B.USER_NAME,
+		B.USER_PASSWORD,
+		B.USER_DATE_OF_BIRTH,
+		B.USER_ADDR1, 
+		B.USER_ADDR2, 
+		B.USER_PROFILE_AFI, 
+		B.USER_PHONE_NUMBER, 
+		B.USER_ST_CODE, 
+		B.USER_ROLE, 
+		B.USER_REGIST_DATE, 
+		B.USER_BS_REGIST_NO, 
+		B.USER_BS_AFI
+	</sql>
+	<sql id="codeColumnsC">
+		C.CODE_ID, 
+		C.CODE_PAR_ID, 
+		C.CODE_NAME, 
+		C.CODE_DESC
+	</sql>
+	
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(*)
+			
+		FROM PROJECT_MEMBER A
+		INNER JOIN USERS B ON (A.USER_ID = B.USER_ID)
+		INNER JOIN CODE C ON (A.PJ_MEM_ROLE_TYPE_CODE = C.CODE_ID)
+		<where>
+			A.PJ_ID = #{pjId}
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+				<choose>
+					<when test="paging.simpleCondition.searchType eq 'userName'">
+						AND INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0
+					</when>
+				</choose>
+			</if>
+		</where>
+	</select>
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectMemberVO" id="pjMemberMap" autoMapping="true">
+		<association property="user" javaType="UsersVO" autoMapping="true" />
+		<association property="code" javaType="CodeVO" autoMapping="true" />
+		<association property="pjName" javaType="kr.or.ddit.projects.vo.ProjectRoleNameVO" autoMapping="true" />
+		<association property="fileName" javaType="string">
+			<result property="fileName" column="FILE_NAME"/>
+		</association>
+		
+	</resultMap>
+	<resultMap type="kr.or.ddit.projects.vo.ProjectMemberVO" id="updPjMemberMap" autoMapping="true">
+		<association property="user" javaType="UsersVO" autoMapping="true" />
+		<association property="code" javaType="CodeVO" autoMapping="true" />
+		<association property="pjName" javaType="kr.or.ddit.projects.vo.ProjectRoleNameVO" autoMapping="true" />
+	</resultMap>
+	
+	
+	<select id="selectProjectMemberPagingList" resultMap="pjMemberMap">
+		   SELECT E.*
+		   FROM
+			   (SELECT ROWNUM RNUM, D.*
+			    FROM(
+			        SELECT 
+			        	<include refid="projectMemberColumnsA" />,
+						<include refid="usersColumnsB" />,
+						<include refid="codeColumnsC" />,
+						D.PJ_ROLE_NAME,
+						E.FILE_NAME
+					FROM PROJECT_MEMBER A
+					INNER JOIN USERS B ON (A.USER_ID = B.USER_ID)
+					INNER JOIN CODE C ON (A.PJ_MEM_ROLE_TYPE_CODE = C.CODE_ID)
+					LEFT OUTER JOIN PROJECT_ROLE_NAME D ON (A.PJ_ROLE_ID = D.PJ_ROLE_ID)
+					LEFT OUTER JOIN ATCH_FILE_DETAIL E ON (B.USER_PROFILE_AFI = E.ATCH_FILE_ID)
+					<where>
+						A.PJ_ID = #{pjId}
+						<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+							<choose>
+								<when test="paging.simpleCondition.searchType eq 'userName'">
+									AND INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0
+								</when>
+							</choose>
+						</if>
+					</where>
+			    ) D
+		)E	    
+		<![CDATA[
+		WHERE rnum >= #{paging.startRow} AND rnum <= #{paging.endRow}
+		]]>
+	
+	</select>
+	
+	<insert id="insertProjectMember">
+		<selectKey order="BEFORE" resultType="string" keyProperty="pjMemId">
+			SELECT #{pjId} || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(PJ_MEM_ID), 9)),0) + 1, 4, '0')
+			FROM PROJECT_MEMBER
+			WHERE PJ_ID = #{pjId}	
+		</selectKey>
+		INSERT INTO PROJECT_MEMBER (
+		    PJ_MEM_ID,
+		    PJ_ID,
+		    USER_ID,
+		    PJ_MEM_JOIN_DATE,
+		    PJ_MEM_LEAVE_ST_CODE,
+		    PJ_MEM_ROLE_TYPE_CODE,
+		    PJ_ROLE_ID
+		) VALUES (
+		     #{pjMemId,jdbcType=VARCHAR}
+		    , #{pjId,jdbcType=VARCHAR}
+		    , #{userId,jdbcType=VARCHAR}
+		    , TO_CHAR(SYSDATE, 'YYYYMMDD')
+		    , 'N'
+		    , #{pjMemRoleTypeCode,jdbcType=CHAR}
+		    , #{pjRoleId,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	
+	
+	<select id="selectProjectMemberList" resultMap="updPjMemberMap">
+		SELECT 
+			<include refid="projectMemberColumnsA" />,
+			<include refid="usersColumnsB" />,
+			<include refid="codeColumnsC" />
+			
+		FROM PROJECT_MEMBER A
+		INNER JOIN USERS B ON (A.USER_ID = B.USER_ID)
+		INNER JOIN CODE C ON (A.PJ_MEM_ROLE_TYPE_CODE = C.CODE_ID)
+		WHERE A.PJ_ID = #{pjId}
+	</select>
+	
+	<select id="selectProjectMember" resultMap="updPjMemberMap">
+		SELECT 
+			<include refid="projectMemberColumnsA" />,
+			<include refid="usersColumnsB" />,
+			<include refid="codeColumnsC" />,
+			D.PJ_ROLE_NAME
+		FROM PROJECT_MEMBER A
+		INNER JOIN USERS B ON (A.USER_ID = B.USER_ID)
+		INNER JOIN CODE C ON (A.PJ_MEM_ROLE_TYPE_CODE = C.CODE_ID)
+		LEFT OUTER JOIN PROJECT_ROLE_NAME D ON (A.PJ_ROLE_ID = D.PJ_ROLE_ID)
+		WHERE A.PJ_MEM_ID = #{pjMemId}
+	</select>
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectMemberVO" id="projectMemberMap" autoMapping="true">
+		<association property="project" javaType="kr.or.ddit.projects.vo.ProjectVO" autoMapping="true" />
+	</resultMap>
+	
+	<select id="selectMyProjectList" resultMap="projectMemberMap">
+		SELECT 
+			A.PJ_MEM_ID,
+		    A.PJ_ID,
+		    A.USER_ID,
+		    A.PJ_MEM_JOIN_DATE,
+		    A.PJ_MEM_LEAVE_ST_CODE,
+		    A.PJ_MEM_ROLE_TYPE_CODE,
+		    A.PJ_ROLE_ID,
+			<include refid="projectColumns" />
+			PJ_ROLE_ID
+		FROM PROJECT_MEMBER A
+		INNER JOIN PROJECT B ON A.PJ_ID = B.PJ_ID
+		WHERE A.USER_ID = #{userId,jdbcType=VARCHAR}
+	</select>
+	
+	<update id="deleteProjectMember">
+		UPDATE PROJECT_MEMBER
+		SET
+		    PJ_MEM_LEAVE_ST_CODE = 'Y'
+		WHERE
+        	PJ_MEM_ID = #{pjMemId,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="searchPjMember" resultType="kr.or.ddit.projects.vo.ProjectMemberVO">
+		SELECT 
+			<include refid="projectMemberColumns" />
+		FROM PROJECT_MEMBER
+		WHERE PJ_ID = #{pjId}
+		AND USER_ID = #{userId}
+	</select>
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectMemberVO" id="pjMemListMap" autoMapping="true">
+		<association property="user" javaType="UsersVO" autoMapping="true" />
+	</resultMap>
+	
+	<select id="selectProjectMemberListwith" resultMap="pjMemListMap">
+		SELECT
+<!-- 			<include refid="projectMemberColumns" /> -->
+			A.PJ_MEM_ID,
+		    A.PJ_ID,
+		    A.USER_ID,
+		    A.PJ_MEM_JOIN_DATE,
+		    A.PJ_MEM_LEAVE_ST_CODE,
+		    A.PJ_MEM_ROLE_TYPE_CODE,
+		    A.PJ_ROLE_ID,
+            B.USER_NAME
+		FROM PROJECT_MEMBER A
+        INNER JOIN USERS B ON (A.USER_ID = B.USER_ID)
+		WHERE A.PJ_ID = #{pjId}
+	</select>
+	
+	<update id="updateMemberRole">
+		UPDATE PROJECT_MEMBER
+		SET
+		    PJ_ROLE_ID = #{pjRoleId,jdbcType=VARCHAR}
+		WHERE
+		    pj_mem_id =  #{pjMemId,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="updateMemberNormalRole">
+		UPDATE PROJECT_MEMBER
+		SET
+		    PJ_ROLE_ID = 'P0200001R016'
+		WHERE
+		    PJ_ROLE_ID = #{pjRoleId,jdbcType=VARCHAR}
+	</update>
+	
+</mapper>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.project.mapper.ProjectDashBoardMapper">
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectMemberVO" id="pjMemMap" autoMapping="true">
+		<association property="project" javaType="kr.or.ddit.projects.vo.ProjectVO" autoMapping="true" />
+	</resultMap>
+	
+	<select id="readProjectMemberVO" resultMap="pjMemMap">
+		SELECT
+			 A.pj_mem_id
+			,A.pj_id
+			,A.user_id
+			,A.pj_role_id
+			,B.PJ_NAME
+		FROM project_member A
+		INNER JOIN project B ON (A.PJ_ID = B.PJ_ID)
+		WHERE A.pj_id = #{pjId}
+			AND A.user_id = #{userId}
+	</select>
+	
+	<select id="readProjectBoardList" resultType="kr.or.ddit.projects.vo.ProjectBoardVO">
+	SELECT A.*
+	FROM (
+			SELECT
+				 pj_board_id
+				,pj_mem_id
+				,pj_id
+				,pj_board_title
+				,pj_board_created_dt
+			FROM project_board
+			WHERE pj_id = #{pjId}
+				AND pj_board_cate_code = 'P0501'
+				AND pj_board_is_del = 'N'
+			ORDER BY pj_board_id DESC
+		) A
+	<![CDATA[
+		WHERE ROWNUM <= 5
+	]]>
+	</select>
+
+	<select id="readTaskBoardList" resultType="kr.or.ddit.projects.vo.TaskBoardVO">
+		SELECT A.*
+		FROM (
+			SELECT
+				 task_id
+				,task_assignee_id
+				,task_end_date
+				,pj_id
+				,task_name
+			FROM task_board
+			WHERE task_assignee_id = #{pjMemId}
+				AND task_is_del = 'N'
+			ORDER BY task_end_date ASC
+		) A
+		<![CDATA[
+			WHERE ROWNUM <= 5
+		]]>
+	</select>
+	
+	<select id="readTodoListList" resultType="kr.or.ddit.projects.vo.TodoListVO">
+	SELECT A.*
+	FROM (
+			SELECT
+				 todo_id
+				,pj_mem_id
+				,pj_id
+				,todo_title
+				,todo_end_date
+			FROM todo_list
+			WHERE pj_mem_id = #{pjMemId}
+				AND todo_st_code = 'T0101'
+				AND todo_is_del = 'N'
+			ORDER BY todo_end_date ASC
+		) A
+	<![CDATA[
+		WHERE ROWNUM <= 4
+	]]>
+	</select>
+
+	<resultMap type="kr.or.ddit.projects.vo.IssueVO" id="issueMap" autoMapping="true">
+		<result property="issueId" column="issue_id" />
+		<association property="handlerName" javaType="kr.or.ddit.users.vo.UsersVO">
+			<result property="userName" column="user_name" javaType="string" />
+		</association>
+	</resultMap>
+
+	<select id="readIssueList" resultMap="issueMap">
+		SELECT A.*
+		FROM (
+				SELECT
+					 issue_id
+					,issue_handler_id
+					,A.pj_id
+					,issue_title
+					, user_name
+				FROM issue A
+				INNER JOIN project_member B ON (B.pj_mem_id = A.issue_handler_id)
+				INNER JOIN users C ON (C.user_id = B.user_id)
+				WHERE A.pj_id = #{pjId}
+					AND issue_is_del = 'N'
+				ORDER BY issue_id DESC
+			) A
+		<![CDATA[
+			WHERE ROWNUM <= 5
+		]]>
+	</select>
+	
+	<select id="readTaskProgress" resultType="kr.or.ddit.projects.project.vo.TaskProgressVO">
+		SELECT
+		     SUBSTR(REPLACE(TO_CHAR(pj_created_dt,'YYYYMMDD'),'/',''),1,6) || '01' AS pj_created_dt
+		    ,SUBSTR(REPLACE(TO_CHAR(pj_end_dt,'YYYYMMDD'),'/',''),1,6) || '01' AS pj_end_dt
+		    ,SUBSTR(task_start_date,1,6) || '01' AS task_start_date
+		    ,task_progress/100 AS task_progress
+		    ,SUBSTR(REPLACE(TO_CHAR(SYSDATE,'YYYYMMDD'),'/',''),1,6) || '01' AS today
+		FROM task_board A
+		INNER JOIN project B ON (A.pj_id = B.pj_id)
+		WHERE A.pj_id = #{pjId}
+			AND task_is_del = 'N'
+	</select>
+	
+	<select id="readTaskCount" resultType="kr.or.ddit.projects.project.vo.TaskVolumeVO">
+		SELECT
+			 user_name
+			,COUNT(*) AS task_count
+		FROM task_board A
+		INNER JOIN project_member B ON (A.task_assignee_id = B.pj_mem_id)
+		INNER JOIN users C on (B.user_id = C.user_id)
+		WHERE A.pj_id = #{pjId}
+			AND task_is_del = 'N'
+		GROUP BY user_name
+	</select>
+	
+	<select id="readDailyTaskCount" resultType="kr.or.ddit.projects.project.vo.DailyTaskProgressVO">
+		SELECT
+			 user_name
+			,COUNT(*) AS daily_task_count
+		FROM daily_report A
+		INNER JOIN project_member B ON (A.pj_mem_id = B.pj_mem_id)
+		INNER JOIN users C on (B.user_id = C.user_id)
+		WHERE A.pj_id = #{pjId}
+			AND dreport_is_del = 'N'
+		GROUP BY user_name
+	</select>
+
+</mapper>

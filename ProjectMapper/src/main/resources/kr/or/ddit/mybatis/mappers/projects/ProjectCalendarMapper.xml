@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.schedule.mapper.ProjectCalendarMapper">
+
+	<select id="selectProjectCalendarList" resultType="kr.or.ddit.projects.vo.TaskBoardVO">
+		SELECT
+			 task_id
+			,task_parent_id
+			,task_instructer_id
+			,task_assignee_id
+			,task_board.pj_id
+			,task_name
+			,task_content
+			,task_created_date
+			,task_start_date
+			,task_end_date
+			,task_importance_code
+			,task_st_code
+			,task_progress
+			,task_is_del
+			,user_name
+			,code_name
+		FROM task_board
+		INNER JOIN project_member ON (project_member.pj_mem_id = task_board.task_assignee_id)
+		INNER JOIN users ON (users.user_id = project_member.user_id)
+		INNER JOIN code ON (code.code_id = task_board.task_importance_code)
+		WHERE task_board.pj_id = #{pjId}
+			AND task_is_del = 'N'
+	</select>
+
+</mapper>

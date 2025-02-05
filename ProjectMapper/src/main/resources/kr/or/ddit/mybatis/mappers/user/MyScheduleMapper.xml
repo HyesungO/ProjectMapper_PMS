@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.users.calendar.mapper.MyScheduleMapper">
+
+	<select id="getSchId" resultType="string">
+		SELECT 'SCH' || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(SCH_ID,4))),0)+1,6,'0')
+		FROM MY_SCHEDULE
+	</select>
+
+	<!-- 테스트 끝나면 다시 붙여야됨 WHERE USER_ID = #{userId} -->
+	<select id="selectMyScheduleList" resultType="kr.or.ddit.users.vo.MyScheduleVO">
+		SELECT SCH_ID, USER_ID, SCH_NAME, SCH_CONTENT, SCH_START_DT, SCH_END_DT
+		FROM MY_SCHEDULE
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<select id="selectMySchedule" resultType="kr.or.ddit.users.vo.MyScheduleVO">
+		SELECT SCH_ID, USER_ID, SCH_NAME, SCH_CONTENT, SCH_START_DT, SCH_END_DT
+		FROM MY_SCHEDULE
+		WHERE SCH_ID = #{schId}
+	</select>
+	<!-- 
+			(SELECT 'SCH' || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(SCH_ID,4))),0)+1,6,'0')
+				FROM MY_SCHEDULE)
+	 -->
+	<insert id="insertMySchedule">
+		INSERT INTO MY_SCHEDULE (SCH_ID, USER_ID, SCH_NAME, SCH_CONTENT, SCH_START_DT, SCH_END_DT)
+		VALUES (
+			#{schId}
+			, #{userId}
+			, #{schName}
+			, #{schContent}
+			, #{schStartDt}
+			, #{schEndDt}
+		)
+	</insert>
+	
+	<update id="updateMySchedule">
+		UPDATE MY_SCHEDULE
+		SET
+			USER_ID = #{userId},
+			SCH_NAME = #{schName},
+			SCH_CONTENT = #{schContent},
+			SCH_START_DT = #{schStartDt},
+			SCH_END_DT = #{schEndDt}
+		WHERE SCH_ID = #{schId}
+	</update>
+	
+	<delete id="deleteMySchedule">
+		DELETE MY_SCHEDULE
+		WHERE SCH_ID = #{schId}
+	</delete>
+	
+	<select id="readPjScheduleList" resultType="kr.or.ddit.projects.vo.TaskBoardVO">
+		SELECT
+		     task_id
+		    ,task_name
+			,task_start_date
+			,task_end_date
+		FROM task_board A
+		INNER JOIN project_member B ON (A.task_assignee_id = B.pj_mem_id)
+		INNER JOIN users C ON (B.user_id = C.user_id)
+		WHERE C.user_id = #{userId}
+	</select>
+	
+	<select id="readPjSchedule" resultType="kr.or.ddit.projects.vo.TaskBoardVO">
+		SELECT
+		     task_id
+		    ,task_name
+		    ,task_content
+			,task_start_date
+			,task_end_date
+		FROM task_board A
+		INNER JOIN project_member B ON (A.task_assignee_id = B.pj_mem_id)
+		INNER JOIN users C ON (B.user_id = C.user_id)
+		WHERE A.task_id = #{taskId}
+	</select>
+
+</mapper>

@@ -1,0 +1,40 @@
+@charset "UTF-8";
+
+#project_nav>a {
+	margin-right: 35px;
+	margin-left: 35px;
+}
+#project_container {
+	width: 1300px;
+	margin: 120px auto 0px auto;
+}
+.project_contentBox {
+	width: 300px;
+	height: 200px;
+	border: 1px solid black;
+	color: black;
+	margin-right: 100px;
+	margin-bottom: 100px;
+	float: left;
+}
+
+
+
+#staticBackdrop .modal-header {
+  color: black; /* 텍스트 색 */
+}
+
+
+  .modal-content {
+    max-height: 850px;
+
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  

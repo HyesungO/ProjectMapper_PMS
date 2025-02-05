@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.liveEditor.mapper.LiveEditorMapper">
+
+	<resultMap type="kr.or.ddit.projects.vo.LiveEditorVO" id="liveEditorMap" autoMapping="true">
+		<id property="leId" column="le_id" />
+		<association property="users" javaType="kr.or.ddit.users.vo.UsersVO">
+			<result property="userName" column="user_name" />
+		</association>
+	</resultMap>
+
+	<select id="selectLiveEditorList" resultMap="liveEditorMap">
+	SELECT A.*, ROWNUM as rnum
+	FROM (
+			SELECT
+				 le_id
+				,le_editor_id
+				,A.pj_mem_id
+				,A.pj_id
+				,le_title
+				,le_content
+				,le_created_dt
+				,le_modi_dt
+				,le_is_del
+				,user_name
+			FROM live_editor A
+			INNER JOIN project_member B ON (B.pj_mem_id = A.pj_mem_id)
+			INNER JOIN users C ON (C.user_id = B.user_id)
+			WHERE A.pj_id = #{pjId}
+				AND le_is_del = 'N'
+			ORDER BY A.le_id DESC
+		) A
+	</select>
+	
+	<select id="selectLiveEditor" resultMap="liveEditorMap">
+		SELECT
+			 le_id
+			,le_editor_id
+			,A.pj_mem_id
+			,A.pj_id
+			,le_title
+			,le_content
+			,le_created_dt
+			,le_modi_dt
+			,le_is_del
+			, user_name
+		FROM live_editor A
+		INNER JOIN project_member B ON (B.pj_mem_id = A.pj_mem_id)
+		INNER JOIN users C ON (C.user_id = B.user_id)
+		WHERE le_id = #{leId}
+	</select>
+	
+	<insert id="insertLiveEditor">
+		INSERT INTO live_editor (
+		     le_id
+		    ,le_editor_id
+		    ,pj_mem_id
+		    ,pj_id
+		    ,le_title
+		    ,le_content
+		    ,le_created_dt
+		) VALUES (
+		    (SELECT 'LE' || LPAD(NVL(MAX(SUBSTR(le_id,3)),0)+1,6,'0')
+				FROM live_editor)
+			,#{leEditorId}
+			,#{pjMemId}
+			,#{pjId}
+			,#{leTitle}
+			,#{leContent}
+			,SYSDATE
+		)
+	</insert>
+	
+	<update id="updateLiveEditor">
+		UPDATE live_editor
+		SET
+			 le_title = #{leTitle}
+			,le_content = #{leContent}
+			,le_modi_dt = SYSDATE
+		WHERE le_id = #{leId}
+	</update>
+	
+	<delete id="deleteLiveEditor">
+		UPDATE live_editor
+		SET
+			le_is_del = 'Y'
+		WHERE le_id = #{leId}
+	</delete>
+
+</mapper>

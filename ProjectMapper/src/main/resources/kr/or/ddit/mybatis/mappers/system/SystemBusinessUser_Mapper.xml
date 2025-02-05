@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.system.user.mapper.SystemBusinessUserMapper">
+
+
+
+<resultMap type="kr.or.ddit.users.vo.UsersVO" id="usersMap" autoMapping="true">
+		<id property="userId" column="USER_ID" />
+		<result property="userBsAfi" column="ATCH_FILE_ID" />
+		<association property="atchFile" column="ATCH_FILE_ID"
+			select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+	</resultMap>
+
+
+	<select id="selectTotalRecord" resultType="int">
+    SELECT COUNT(*)
+		FROM USERS
+		INNER JOIN CODE ON CODE.CODE_ID = USERS.USER_ST_CODE
+		WHERE CODE.code_name = #{codeName}
+		<if	test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+		<choose>
+				<when
+					test="paging.simpleCondition.searchType eq 'UserName'">
+					AND INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0
+				</when>
+				<when
+					test="paging.simpleCondition.searchType eq 'BusinessNum'">
+					AND INSTR(USER_BS_REGIST_NO, #{paging.simpleCondition.searchWord}) > 0
+				</when>
+				<otherwise>
+					AND (
+						INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0 
+						OR INSTR(USER_BS_REGIST_NO, #{paging.simpleCondition.searchWord}) > 0 
+					)
+				</otherwise>
+			</choose>
+		</if>
+	</select>
+	
+	
+	
+	
+	
+	
+	<select id="selectBusinessUserList" resultMap="usersMap">
+		SELECT B.*
+			FROM
+			(
+			SELECT ROWNUM RNUM, A.*
+				FROM (
+				SELECT
+			    USER_ID,
+			    USER_NAME,
+			    USER_EMAIL,
+			    USER_PHONE_NUMBER,
+			    USER_ADDR1,
+			    USER_ADDR2,
+			    USER_BS_REGIST_NO,
+			    USER_BS_AFI,
+			    CODE_NAME
+			FROM USERS
+			INNER JOIN CODE ON CODE.CODE_ID = USERS.USER_ST_CODE
+			WHERE CODE.CODE_NAME = #{codeName}
+			
+			<if
+							test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+							<choose>
+								<when
+									test="paging.simpleCondition.searchType eq 'UserName'">
+									AND INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0
+								</when>
+								<when
+									test="paging.simpleCondition.searchType eq 'BusinessNum'">
+									AND INSTR(USER_BS_REGIST_NO, #{paging.simpleCondition.searchWord}) > 0
+								</when>
+								<otherwise>
+									AND (
+										INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0 
+										OR INSTR(USER_BS_REGIST_NO, #{paging.simpleCondition.searchWord}) > 0 
+									)
+								</otherwise>
+							</choose>
+						</if>
+			) A
+		) B
+		WHERE RNUM BETWEEN #{paging.startRow} AND #{paging.endRow}
+		
+
+
+	</select>
+	
+	<select id="selectBusinessUser" resultMap="usersMap">
+	       
+		SELECT
+		    USERS.USER_ID,
+		    USERS.USER_EMAIL,
+		    USERS.USER_NAME,
+		    USERS.USER_DATE_OF_BIRTH,
+		    USERS.USER_ADDR1,
+		    USERS.USER_ADDR2,
+		    USERS.USER_PHONE_NUMBER,
+		    CODE.CODE_NAME AS CODE_NAME1,
+		    USERS.USER_REGIST_DATE,
+		    USERS.USER_BS_AFI,
+		    USERS.USER_BS_REGIST_NO,
+		    (
+		        SELECT CODE_NAME
+		        FROM CODE
+		        WHERE CODE_ID = USERS.USER_ST_CODE
+		    ) AS CODE_NAME2,
+		    (SELECT ATCH_FILE_ID
+				FROM ATCH_FILE
+				WHERE ATCH_FILE_ID = (SELECT USER_BS_AFI FROM USERS WHERE USER_ID = #{usdrId})) AS ATCH_FILE_ID
+		FROM
+		    USERS
+		INNER JOIN
+		    CODE ON USERS.USER_ROLE = CODE.CODE_ID
+		WHERE
+		    USERS.USER_ID = #{userId}
+
+	
+	
+	</select>
+	
+	<update id="updateBusinessUser" >
+		UPDATE USERS
+		    SET
+		       USER_ST_CODE = 'U0101'
+		WHERE USER_ID = #{userId}
+	
+	</update>
+
+	
+	<update id="updateBusinessUser2">
+	
+		UPDATE USERS
+			SET
+			 	USER_ST_CODE = 'U0105'
+		WHERE USER_ID = #{userId}
+	
+	</update>
+
+
+</mapper>

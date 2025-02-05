@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.notication.noticeBoard.mapper.NoticeBoardMapper">
+    
+    <!-- 첨부파일 조인을 위한 resultMap -->
+    <resultMap type="NoticeBoardVO" id="noticeMap">
+        <id property="noticeId" column="notice_id"/>
+        <result property="adminId" column="admin_id"/>
+        <result property="noticeTitle" column="notice_title"/>
+        <result property="noticeContent" column="notice_content"/>
+        <result property="noticeAfi" column="notice_afi"/>
+        <result property="noticeCateCode" column="notice_cate_code"/>
+        <result property="noticeCreatedDt" column="notice_created_dt" javaType="java.time.LocalDateTime"/>
+        <result property="noticeUpdatedDt" column="notice_updated_dt" javaType="java.time.LocalDateTime"/>
+        <result property="noticeDeleteFlag" column="notice_delete_flag"/>
+        <result property="noticeTypeCode" column="notice_type_code"/>
+        <result property="noticeViewCount" column="notice_view_count"/>
+        <result property="rnum" column="rnum"/>
+        
+        <!-- 첨부파일 그룹 매핑 -->
+        <association property="fileGroup" javaType="AtchFileVO">
+            <id property="atchFileId" column="notice_afi"/>
+            <result property="atchCreateDt" column="atch_create_dt"/>
+            <result property="atchUseAt" column="atch_use_at"/>
+            <collection property="fileDetails" ofType="AtchFileDetailVO">
+                <id property="atchFileId" column="notice_afi"/>
+                <id property="fileNumber" column="file_number"/>
+                <result property="fileStrePath" column="file_stre_path"/>
+                <result property="fileName" column="file_name"/>
+                <result property="originalFileName" column="original_file_name"/>
+                <result property="fileExtension" column="file_extension"/>
+                <result property="fileSize" column="file_size"/>
+                <result property="fileFancysize" column="file_fancysize"/>
+                <result property="fileMime" column="file_mime"/>
+                <result property="fileDowncnt" column="file_downcnt"/>
+            </collection>
+        </association>
+    </resultMap>
+    
+    <!-- 전체 레코드 수 조회 -->
+    <select id="selectTotalRecord" parameterType="PaginationInfo" resultType="int">
+        SELECT COUNT(*)
+        FROM NOTICE_BOARD
+        WHERE notice_delete_flag != 'Y'
+        <if test="simpleCondition != null">
+            <choose>
+                <when test="simpleCondition.searchType == 'title'">
+                    AND LOWER(notice_title) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                </when>
+                <when test="simpleCondition.searchType == 'content'">
+                    AND LOWER(notice_content) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                </when>
+                <when test="simpleCondition.searchType == 'titleContent'">
+                    AND (
+                        LOWER(notice_title) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                        OR LOWER(notice_content) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                    )
+                </when>
+                <when test="simpleCondition.searchType == 'writer'">
+                    AND LOWER(admin_id) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+                </when>
+            </choose>
+        </if>
+    </select>
+    
+    <!-- 페이징 처리된 공지사항 목록 조회 -->
+    <select id="selectNoticeList" parameterType="PaginationInfo" resultMap="noticeMap">
+	    WITH ORDEREDNOTICE AS (
+	        SELECT ROWNUM RNUM, A.*
+	        FROM (
+	            SELECT 
+			    N.notice_id,
+			    N.admin_id,
+			    N.notice_title,
+			    N.notice_content,
+			    N.notice_afi,
+			    N.notice_cate_code,
+			    N.notice_created_dt,
+			    N.notice_updated_dt,
+			    N.notice_delete_flag,
+			    N.notice_type_code,
+			    N.notice_view_count,
+			    A.atch_file_id,
+			    A.atch_create_dt,
+			    A.atch_use_at,
+			    D.file_number,
+			    D.file_stre_path,
+			    D.file_name,
+			    D.original_file_name,
+			    D.file_extension,
+			    D.file_size,
+			    D.file_fancysize,
+			    D.file_mime,
+			    D.file_downcnt
+			FROM NOTICE_BOARD N
+	            LEFT OUTER JOIN ATCH_FILE A ON N.notice_afi = A.atch_file_id
+	            LEFT OUTER JOIN ATCH_FILE_DETAIL D ON A.atch_file_id = D.atch_file_id
+	            WHERE N.notice_delete_flag != 'Y'
+	            <!-- 검색 조건 추가 -->
+	            <if test="simpleCondition != null">
+	                <choose>
+	                    <when test="simpleCondition.searchType == 'title'">
+	                        AND LOWER(N.notice_title) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+	                    </when>
+	                    <when test="simpleCondition.searchType == 'content'">
+	                        AND LOWER(N.notice_content) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+	                    </when>
+	                    <when test="simpleCondition.searchType == 'titleContent'">
+	                        AND (
+	                            LOWER(N.notice_title) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+	                            OR LOWER(N.notice_content) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+	                        )
+	                    </when>
+	                    <when test="simpleCondition.searchType == 'writer'">
+	                        AND LOWER(N.admin_id) LIKE LOWER('%' || #{simpleCondition.searchWord} || '%')
+	                    </when>
+	                </choose>
+	            </if>
+	            ORDER BY 
+	                CASE WHEN N.notice_cate_code = 'Y' THEN 0 ELSE 1 END,
+	                N.notice_created_dt DESC
+	        ) A
+	    )
+	    SELECT *
+	    FROM ORDEREDNOTICE
+	    WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+	</select>
+    
+    <!-- 공지사항 상세 조회 - 첨부파일 정보 포함 -->
+    <select id="selectNotice" parameterType="string" resultMap="noticeMap">
+        SELECT N.*, A.*, D.*
+        FROM NOTICE_BOARD N
+        LEFT OUTER JOIN ATCH_FILE A ON N.notice_afi = A.atch_file_id
+        LEFT OUTER JOIN ATCH_FILE_DETAIL D ON A.atch_file_id = D.atch_file_id
+        WHERE N.notice_id = #{noticeId}
+        AND N.notice_delete_flag != 'Y'
+    </select>
+    
+    <!-- 검색 - 첨부파일 정보 포함 -->
+    <select id="searchNotices" parameterType="map" resultMap="noticeMap">
+        SELECT N.*, A.*, D.*
+        FROM NOTICE_BOARD N
+        LEFT OUTER JOIN ATCH_FILE A ON N.notice_afi = A.atch_file_id
+        LEFT OUTER JOIN ATCH_FILE_DETAIL D ON A.atch_file_id = D.atch_file_id
+        WHERE N.notice_delete_flag != 'Y'
+        <choose>
+            <when test="searchType == 'title'">
+                AND LOWER(N.notice_title) LIKE LOWER('%' || #{searchWord} || '%')
+            </when>
+            <when test="searchType == 'content'">
+                AND LOWER(N.notice_content) LIKE LOWER('%' || #{searchWord} || '%')
+            </when>
+            <when test="searchType == 'titleContent'">
+                AND (
+                    LOWER(N.notice_title) LIKE LOWER('%' || #{searchWord} || '%')
+                    OR LOWER(N.notice_content) LIKE LOWER('%' || #{searchWord} || '%')
+                )
+            </when>
+            <when test="searchType == 'writer'">
+                AND LOWER(N.admin_id) LIKE LOWER('%' || #{searchWord} || '%')
+            </when>
+        </choose>
+        ORDER BY N.notice_created_dt DESC
+    </select>
+    
+    <!-- 팝업 공지사항 조회 -->
+    <select id="selectPopupNotices" resultType="NoticeBoardVO">
+        SELECT *
+        FROM NOTICE_BOARD
+        WHERE notice_delete_flag != 'Y'
+        AND notice_cate_code = 'Y'
+        ORDER BY notice_created_dt DESC
+    </select>
+    
+    <!-- 공지사항 등록 -->
+    <insert id="insertNotice" parameterType="NoticeBoardVO">
+    INSERT INTO NOTICE_BOARD (
+        notice_id,
+        admin_id,
+        notice_title,
+        notice_content,
+        notice_afi,
+        notice_cate_code,
+        notice_created_dt,
+        notice_delete_flag,
+        notice_type_code,
+        notice_view_count
+    ) VALUES (
+        #{noticeId},
+        #{adminId},
+        #{noticeTitle},
+        #{noticeContent},
+        #{noticeAfi},
+        #{noticeCateCode},
+        #{noticeCreatedDt},
+        #{noticeDeleteFlag},
+        #{noticeTypeCode},
+        #{noticeViewCount}
+    )
+</insert>
+    
+    <!-- 공지사항 수정 -->
+    <update id="updateNotice" parameterType="NoticeBoardVO">
+        UPDATE NOTICE_BOARD
+        SET
+            notice_title = #{noticeTitle},
+            notice_content = #{noticeContent},
+            notice_afi = #{noticeAfi},
+            notice_cate_code = #{noticeCateCode},
+            notice_updated_dt = #{noticeUpdatedDt},
+            notice_type_code = #{noticeTypeCode}
+        WHERE notice_id = #{noticeId}
+    </update>
+    
+    <!-- 첨부파일 업데이트 -->
+    <update id="updateNoticeFile">
+        UPDATE NOTICE_BOARD
+        SET notice_afi = #{noticeAfi}
+        WHERE notice_id = #{noticeId}
+    </update>
+    
+    <!-- 공지사항 삭제 (플래그 업데이트) -->
+    <update id="deleteNotice" parameterType="string">
+        UPDATE NOTICE_BOARD
+        SET notice_delete_flag = 'Y'
+        WHERE notice_id = #{noticeId}
+    </update>
+    
+    <!-- 조회수 증가 -->
+    <update id="incrementViewCount" parameterType="string">
+        UPDATE NOTICE_BOARD
+        SET notice_view_count = notice_view_count + 1
+        WHERE notice_id = #{noticeId}
+    </update>
+</mapper>

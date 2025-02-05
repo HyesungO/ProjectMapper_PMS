@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.code.mapper.CodeMapper">
+	
+	<select id="selectIssueImpCodeList" resultType="CodeVO">
+		SELECT
+		    CODE_ID
+		    , CODE_PAR_ID
+		    , CODE_NAME
+		    , CODE_DESC
+		FROM CODE
+		WHERE CODE_PAR_ID = #{codeParId}
+		ORDER BY CODE_ID
+	</select>
+	
+</mapper>

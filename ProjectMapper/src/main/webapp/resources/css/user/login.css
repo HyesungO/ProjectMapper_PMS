@@ -1,0 +1,11 @@
+@charset "UTF-8";
+
+.hero-image-container .hero-image-container-bg img {
+    top: -10px; /* 원하는 만큼 값을 설정하세요 */
+    position: relative;
+}
+
+.hero-image-container img.shadow-lg {
+    top: -10px; /* 원하는 만큼 값을 설정하세요 */
+    position: relative;
+}

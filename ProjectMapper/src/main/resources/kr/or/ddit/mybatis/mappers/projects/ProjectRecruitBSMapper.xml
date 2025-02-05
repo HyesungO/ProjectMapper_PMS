@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.projectRecruits.projectRecruit.mapper.ProjectRecruitBSMapper">
+
+	
+	
+
+
+
+	<sql id="projectRecruitColumns">
+		    P.PJ_RECRUIT_ID,  
+		    P.PJ_ID,
+		    P.PJ_RECRUIT_TITLE,
+		    P.PJ_RECRUIT_CONTENT,
+		    P.PJ_RECRUIT_AFI,
+		    P.PJ_ESTIMATED_START_DATE, 
+		    P.PJ_ESTIMATED_END_DATE,      
+		    P.PJ_RECRUIT_DT,
+		    P.PJ_IS_OUTSOURCED,
+		    P.PJ_OUTSOURCING_COST,
+		    P.PJ_RECRUIT_MODI_DT,
+		    P.PJ_RECRUIT_IS_DEL,
+		    P.PJ_RECRUIT_VIEW_COUNT,
+		    P.PJ_CATE_ID
+		    
+	</sql>
+
+	<sql id="issueColumnsA">
+		A.ISSUE_ID, A.ISSUE_REQUESTER_ID, A.ISSUE_HANDLER_ID,
+		A.PJ_ID, A.ISSUE_TITLE, A.ISSUE_CONTENT, A.ISSUE_CREATED_DT,
+		A.ISSUE_END_DT, A.ISSUE_IMP_CODE, A.ISSUE_TYPE_CODE,
+		A.ISSUE_IS_HANDLED, A.ISSUE_MODI_DT, A.ISSUE_IS_DEL
+	</sql>
+	<sql id="issueCommentColumns">
+		B.ISSUE_COMMENT_ID, B.ISSUE_COMMENT_PARENT_ID,
+		B.PJ_COMMENT_MEM_ID, B.ISSUE_COMMENT_CONTENT,
+		B.ISSUE_COMMENT_CREATED_DT, B.ISSUE_COMMENT_MODI_DT,
+		B.ISSUE_COMMENT_IS_DEL
+	</sql>
+
+	<!-- 검색을 위한 sql -->
+	<sql id="searchFrag">
+		<where>
+			<if test="simpleCondition neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+					<choose>
+						<when
+							test="simpleCondition.searchType ne null and simpleCondition.searchType ne ''">
+							PJ_IS_OUTSOURCED = #{paging.simpleCondition.searchWord}
+						</when>
+						<!-- <when test="simpleCondition.searchType eq 'role'"> -->
+						<!-- INSTR(USER_ROLE, #{simpleCondition.searchWord})||'%' -->
+						<!-- </when> -->
+						<otherwise>
+							INSTR(USER_ROLE, #{paging.simpleCondition.searchWord}) > 0
+						</otherwise>
+					</choose>
+				</if>
+			</if>
+		</where>
+	</sql>
+	<select id="selectmyTotalBoard">
+		SELECT COUNT(*)
+		FROM PROJECT_RECRUIT
+		WHERE PJ_RECRUIT_IS_DEL = 'N'
+		<if test="paging.userId != null and paging.userId != ''">
+            AND USER_ID = #{paging.userId}
+        </if>
+	</select>
+	<!-- 페이징 처리를 위한 전체 게시물 개수 읽어오는 쿼리 -->
+	<select id="selectTotalBoard" resultType="int">
+		SELECT COUNT(*)
+		FROM PROJECT_RECRUIT
+		WHERE PJ_RECRUIT_IS_DEL = 'N'
+		<if test="paging.projectRecruitvo.pjCateId != null and paging.projectRecruitvo.pjCateId != ''">
+            AND PJ_CATE_ID LIKE '%${paging.projectRecruitvo.pjCateId}%'
+        </if>
+		<if test="paging.projectRecruitvo.pjRecruitTitle != null and paging.projectRecruitvo.pjRecruitTitle != ''">
+            AND PJ_RECRUIT_TITLE LIKE '%${paging.projectRecruitvo.pjRecruitTitle}%'
+        </if>
+		<if test="paging.projectRecruitvo.pjIsOutsourced != null and paging.projectRecruitvo.pjIsOutsourced != ''">
+            AND PJ_IS_OUTSOURCED LIKE '%${paging.projectRecruitvo.pjIsOutsourced}%'
+        </if>
+		<if test="paging.userId != null and paging.userId != ''">
+            AND USER_ID = #{paging.userId}
+        </if>
+    
+    
+	</select>
+	
+	
+	<!-- 첨부파일 그리고 users읽어오는 쿼리 -->
+	<resultMap type="kr.or.ddit.projects.vo.ProjectRecruitVO"
+		id="projectRecruitMap" autoMapping="true">
+		<id property="pjRecruitId" column="PJ_RECRUIT_ID" />
+		<result property="pjRecruitAfi" column="PJ_RECRUIT_AFI" />
+		<association property="atchFile" column="PJ_RECRUIT_AFI" select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+			
+		<association property="app" javaType="kr.or.ddit.projects.vo.ApplicationVO" autoMapping="true"></association>
+		
+		<association property="project" javaType="kr.or.ddit.projects.vo.ProjectVO" autoMapping="true"></association>
+		
+		 <collection property="positions" javaType="java.util.List" ofType="kr.or.ddit.projects.vo.PositionVO">
+		    <result property="positionId" column="POSITION_ID"/>
+		    <result property="positionPeopleCount" column="POSITION_PEOPLE_COUNT"/>
+		 </collection>
+		
+		<!-- 대신 조인할 수 있다 다른곳에 있는 쿼리문을 사용 -->
+
+		<!-- <association property="typeCode" javaType="CodeVO"> -->
+		<!-- <result property="codeName" column="TYPE_CODE_NAME"/> -->
+		<!-- </association> -->
+		<!-- <collection property="positions" javaType="kr.or.ddit.projects.vo.PositionVO" 
+			autoMapping="true" /> -->
+	</resultMap>
+
+
+
+
+	<select id="selectmyRecruitBSList"  resultMap="projectRecruitMap">
+		SELECT *
+	    FROM (
+	        SELECT ROWNUM AS RNUM,
+	            <include refid="projectRecruitColumns" />
+	        FROM (
+	            SELECT 
+	                P.PJ_RECRUIT_ID,
+	                P.PJ_ID,
+	                P.PJ_RECRUIT_TITLE,
+	                P.PJ_RECRUIT_CONTENT,
+	                P.PJ_RECRUIT_AFI,
+	                P.PJ_ESTIMATED_START_DATE,
+	                P.PJ_ESTIMATED_END_DATE,
+	                P.PJ_RECRUIT_DT,
+	                P.PJ_IS_OUTSOURCED,
+	                P.PJ_OUTSOURCING_COST,
+	                P.PJ_RECRUIT_MODI_DT,
+	                P.PJ_RECRUIT_IS_DEL,
+	                P.PJ_RECRUIT_VIEW_COUNT,
+	                P.PJ_CATE_ID,
+	                P.USER_ID
+	            FROM PROJECT_RECRUIT P
+	            WHERE PJ_RECRUIT_IS_DEL = 'N'
+	            AND P.USER_ID = #{paging.userId}
+	            
+	            ORDER BY P.PJ_RECRUIT_DT DESC  <!-- PJ_RECRUIT_DT 기준으로 최신순 정렬 -->
+	        ) P
+	    )
+    <where>
+        <if test="paging neq null">
+            <![CDATA[
+            RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+            ]]>
+        </if>
+       
+    </where>
+	</select>
+
+
+	<!-- 공고 리스트로 읽어오는 쿼리 -->
+	<select id="selectRecruitBSList" resultMap="projectRecruitMap">
+    SELECT *
+    FROM (
+        SELECT ROWNUM AS RNUM,
+            <include refid="projectRecruitColumns" />
+        FROM (
+            SELECT 
+                P.PJ_RECRUIT_ID,
+                P.PJ_ID,
+                P.PJ_RECRUIT_TITLE,
+                P.PJ_RECRUIT_CONTENT,
+                P.PJ_RECRUIT_AFI,
+                P.PJ_ESTIMATED_START_DATE,
+                P.PJ_ESTIMATED_END_DATE,
+                P.PJ_RECRUIT_DT,
+                P.PJ_IS_OUTSOURCED,
+                P.PJ_OUTSOURCING_COST,
+                P.PJ_RECRUIT_MODI_DT,
+                P.PJ_RECRUIT_IS_DEL,
+                P.PJ_RECRUIT_VIEW_COUNT,
+                p.PJ_CATE_ID
+            FROM PROJECT_RECRUIT P
+            WHERE PJ_RECRUIT_IS_DEL = 'N'
+            <if test="paging.projectRecruitvo.pjCateId != null and paging.projectRecruitvo.pjCateId != ''">
+            AND PJ_CATE_ID LIKE '%${paging.projectRecruitvo.pjCateId}%'
+	        </if>
+			<if test="paging.projectRecruitvo.pjRecruitTitle != null and paging.projectRecruitvo.pjRecruitTitle != ''">
+	            AND PJ_RECRUIT_TITLE LIKE '%${paging.projectRecruitvo.pjRecruitTitle}%'
+	        </if>
+			<if test="paging.projectRecruitvo.pjIsOutsourced != null and paging.projectRecruitvo.pjIsOutsourced != ''">
+	            AND PJ_IS_OUTSOURCED LIKE '%${paging.projectRecruitvo.pjIsOutsourced}%'
+	        </if>
+            ORDER BY P.PJ_RECRUIT_DT DESC  <!-- PJ_RECRUIT_DT 기준으로 최신순 정렬 -->
+        ) P
+    )
+    <where>
+        <if test="paging neq null">
+            <![CDATA[
+            RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+            ]]>
+        </if>
+       
+    </where>
+</select>
+
+
+
+	<!-- 상세조회를 위한 쿼리 -->
+	<select id="selectRecruitBS" resultMap="projectRecruitMap">
+		SELECT
+		POS.PJ_RECRUIT_ID,
+		POS.POSITION_ID,
+		POS.POSITION_PEOPLE_COUNT,
+		<include refid="projectRecruitColumns" />
+		FROM PROJECT_RECRUIT P
+		INNER JOIN POSITION POS ON POS.PJ_RECRUIT_ID = P.PJ_RECRUIT_ID
+		WHERE P.PJ_RECRUIT_ID = #{pjRecruitId}
+
+	</select>
+	<select id="readRecruitBSWithpjId" resultMap="projectRecruitMap">
+		SELECT
+			PJ_RECRUIT_ID,
+			PJ_ID,
+			PJ_RECRUIT_TITLE,
+			PJ_RECRUIT_CONTENT,
+			PJ_RECRUIT_AFI,
+			PJ_ESTIMATED_START_DATE,
+	    	PJ_ESTIMATED_END_DATE,
+			PJ_RECRUIT_DT,
+			PJ_IS_OUTSOURCED,
+			PJ_OUTSOURCING_COST,
+			PJ_RECRUIT_MODI_DT,
+			PJ_RECRUIT_IS_DEL,
+			PJ_RECRUIT_VIEW_COUNT,
+			PJ_CATE_ID,
+			USER_ID
+		FROM PROJECT_RECRUIT
+		WHERE PJ_RECRUIT_ID = #{pjId}
+
+	</select>
+
+	<!-- 공고 인서트를 윈한 쿼리 -->
+	<insert id="insertRecruitBS" useGeneratedKeys="true" keyProperty="pjRecruitId">
+		<selectKey order="BEFORE" resultType="string"
+			keyProperty="pjRecruitId">
+			SELECT 'PR' || LPAD(
+			NVL(MAX(TO_NUMBER(SUBSTR(PJ_RECRUIT_ID, 3, 6))), 0) + 1, 6,'0' ) AS
+			NEW_PJ_RECRUIT_ID
+			FROM PROJECT_RECRUIT
+			WHERE PJ_RECRUIT_ID LIKE 'PR%'
+		</selectKey>
+		INSERT INTO PROJECT_RECRUIT (
+		PJ_RECRUIT_ID,
+		PJ_ID,
+		PJ_RECRUIT_TITLE,
+		PJ_RECRUIT_CONTENT,
+		PJ_RECRUIT_AFI,
+		PJ_ESTIMATED_START_DATE,
+    	PJ_ESTIMATED_END_DATE,
+		PJ_RECRUIT_DT,
+		PJ_IS_OUTSOURCED,
+		PJ_OUTSOURCING_COST,
+		PJ_RECRUIT_MODI_DT,
+		PJ_RECRUIT_IS_DEL,
+		PJ_RECRUIT_VIEW_COUNT,
+		PJ_CATE_ID,
+		USER_ID
+		) VALUES (
+		#{pjRecruitId,jdbcType=VARCHAR}
+		, #{pjId,jdbcType=VARCHAR}
+		, #{pjRecruitTitle,jdbcType=VARCHAR}
+		, #{pjRecruitContent,jdbcType=CLOB}
+		, #{pjRecruitAfi,jdbcType=VARCHAR}
+		,REPLACE(#{pjEstimatedStartDate,jdbcType=VARCHAR}, '-', '')
+		,REPLACE(#{pjEstimatedEndDate,jdbcType=VARCHAR}, '-', '')
+		, SYSDATE
+		, #{pjIsOutsourced,jdbcType=CHAR}
+		, #{pjOutsourcingCost,jdbcType=NUMERIC}
+		, #{pjRecruitModiDt,jdbcType=DATE}
+		, 'N'
+		, 0
+		, #{pjCateId,jdbcType=VARCHAR}
+		, #{userId,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 공고 업데이트를 위한 쿼리 -->
+	<update id="updateRecruitBS">
+		UPDATE PROJECT_RECRUIT
+		SET
+		PJ_RECRUIT_TITLE = #{pjRecruitTitle,jdbcType=VARCHAR}
+		,PJ_RECRUIT_CONTENT = #{pjRecruitContent,jdbcType=CLOB}
+		,PJ_RECRUIT_AFI = #{pjRecruitAfi,jdbcType=VARCHAR}
+		,PJ_ESTIMATED_START_DATE = REPLACE(#{pjEstimatedStartDate,jdbcType=VARCHAR}, '-', '')
+		,PJ_ESTIMATED_END_DATE = REPLACE(#{pjEstimatedEndDate,jdbcType=VARCHAR}, '-', '')
+		,PJ_OUTSOURCING_COST = #{pjOutsourcingCost,jdbcType=NUMERIC}
+		,PJ_RECRUIT_MODI_DT = SYSDATE
+		WHERE
+		PJ_RECRUIT_ID = #{pjRecruitId}
+	</update>
+
+	<!--포지션 삽입을 위한 쿼리 -->
+	<insert id="insertPositions"
+		parameterType="kr.or.ddit.projects.vo.PositionVO">
+		<selectKey keyProperty="positionId" resultType="string"
+			order="BEFORE">
+			SELECT 'PO' || LPAD(
+			NVL(MAX(TO_NUMBER(SUBSTR(POSITION_ID, 3, 6))), 0) + 1, 6, '0'
+			) AS NEW_POSITION_ID
+			FROM POSITION
+			WHERE POSITION_ID LIKE 'PO%'
+			AND REGEXP_LIKE(SUBSTR(POSITION_ID, 3, 6), '^[0-9]+$')
+		</selectKey>
+		INSERT INTO POSITION (
+		POSITION_ID,
+		PJ_RECRUIT_ID,
+		POSITION_NAME,
+		POSITION_REQ,
+		POSITION_PEOPLE_COUNT
+		) VALUES (
+		#{positionId,jdbcType=VARCHAR},
+		#{pjRecruitId,jdbcType=VARCHAR},
+		#{positionName,jdbcType=VARCHAR},
+		#{positionReq,jdbcType=VARCHAR},
+		#{positionPeopleCount,jdbcType=NUMERIC}
+		)
+	</insert>
+
+	<!-- 공고에 포함된 포지션을 읽어오는 쿼리 -->
+	<select id="selectPositionList"
+		resultType="kr.or.ddit.projects.vo.PositionVO">
+		SELECT
+		PJ_RECRUIT_ID,
+		POSITION_ID,
+		POSITION_NAME,
+		POSITION_REQ,
+		POSITION_PEOPLE_COUNT
+		FROM POSITION
+		WHERE PJ_RECRUIT_ID = #{pjRecruitId}
+	</select>
+
+
+	<update id="deleteRecruitBS">
+		UPDATE PROJECT_RECRUIT
+		SET
+		PJ_RECRUIT_IS_DEL = 'Y'
+		WHERE
+		PJ_RECRUIT_ID = #{pjRecruitId}
+	</update>
+	
+	<delete id="deletePosition">
+		DELETE POSITION
+		WHERE PJ_RECRUIT_ID = #{PjRecruitId}
+	</delete>
+	<update id="updatePositions">
+		UPDATE POSITION
+		SET
+		POSITION_ID = #{positionId,jdbcType=VARCHAR}
+		,PJ_RECRUIT_ID = #{pjRecruitId,jdbcType=VARCHAR}
+		,POSITION_NAME = #{positionName,jdbcType=VARCHAR}
+		,POSITION_REQ = #{positionReq,jdbcType=VARCHAR}
+		,POSITION_PEOPLE_COUNT = #{positionPeopleCount,jdbcType=NUMERIC}
+		WHERE
+		POSITION_ID = #{positionId}
+	</update>
+	
+	<select id="selectprojectRecruitVOwithpjId" resultType="kr.or.ddit.projects.vo.ProjectRecruitVO">
+		SELECT 
+		<include refid="projectRecruitColumns" />
+		FROM PROJECT_RECRUIT P
+		WHERE PJ_ID = #{pjId}
+	</select>
+
+	<select id="selectProjectRecruitWriter" resultType="string">
+		SELECT USER_ID
+		FROM POSITION A
+		INNER JOIN project_recruit B ON ( A.PJ_RECRUIT_ID = B.PJ_RECRUIT_ID)
+		INNER JOIN PROJECT C ON(B.PJ_ID = C.PJ_ID)
+		WHERE POSITION_ID = #{positionId}
+	</select>
+
+</mapper>

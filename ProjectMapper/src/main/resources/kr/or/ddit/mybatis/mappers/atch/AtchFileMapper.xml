@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.atch.mapper.AtchFileMapper">
+	<sql id="atchFileDetailColumns">
+		ATCH_FILE_ID
+		, FILE_NUMBER
+		, FILE_STRE_PATH
+		, FILE_NAME
+		, ORIGINAL_FILE_NAME
+		, FILE_EXTENSION
+		, FILE_SIZE
+		, FILE_FANCYSIZE
+		, FILE_MIME
+		, FILE_DOWNCNT
+	</sql>
+	<!-- ex) 3개의 파일이 업데이트된다면 총 4번의 insert가 필요함 그때 인서트 all을 이용해 한번에 처리가능 -->
+	<insert id="insertAtchFile" parameterType="kr.or.ddit.atch.vo.AtchFileVO">
+		<selectKey order="BEFORE" resultType="int" keyProperty="atchFileId">
+			SELECT ATCH_FILE_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT ALL
+			INTO ATCH_FILE (ATCH_FILE_ID, ATCH_CREATE_DT, ATCH_USE_AT)
+		VALUES (#{atchFileId}, SYSDATE, 'Y')
+		<if test="fileDetails neq null">
+			<foreach collection="fileDetails" item="detail" index="idx">
+				INTO ATCH_FILE_DETAIL(
+					<include refid="atchFileDetailColumns" />
+				) VALUES(
+					#{atchFileId, jdbcType=NUMERIC}
+					, #{idx}+1
+					, #{detail.fileStrePath, jdbcType=VARCHAR}
+					, #{detail.fileName, jdbcType=VARCHAR}
+					, #{detail.originalFileName, jdbcType=VARCHAR}
+					, #{detail.fileExtension, jdbcType=VARCHAR}
+					, #{detail.fileSize, jdbcType=NUMERIC}
+					, #{detail.fileFancysize, jdbcType=VARCHAR}
+					, #{detail.fileMime, jdbcType=VARCHAR}
+					, 0
+				)
+			</foreach>
+		</if>
+		SELECT * FROM DUAL
+	</insert>
+
+	<resultMap type="kr.or.ddit.atch.vo.AtchFileVO" id="atchFileMap"
+		autoMapping="true">
+		<id property="atchFileId" column="ATCH_FILE_ID" />
+		<collection property="fileDetails"
+			ofType="kr.or.ddit.atch.vo.AtchFileDetailVO" autoMapping="true" />
+	</resultMap>
+
+	<select id="selectAtchFileEnable" resultMap="atchFileMap">
+		SELECT ATCH_CREATE_DT, ATCH_USE_AT
+		,  <include refid="atchFileDetailColumns" />
+		FROM ATCH_FILE NATURAL JOIN ATCH_FILE_DETAIL
+		WHERE ATCH_FILE_ID = #{atchFileId} AND ATCH_USE_AT IS NOT NULL
+	</select>
+	<select id="selectAtchFile" resultMap="atchFileMap">
+		SELECT ATCH_CREATE_DT, ATCH_USE_AT
+		, <include refid="atchFileDetailColumns" />
+		FROM ATCH_FILE NATURAL JOIN ATCH_FILE_DETAIL
+		WHERE ATCH_FILE_ID = #{atchFileId}
+		<if test="enable">
+			AND ATCH_USE_AT IS NOT NULL
+		</if>
+		<if test="not enable">
+			AND ATCH_USE_AT IS NULL
+		</if>
+	</select>
+
+	<select id="selectAtchFileDetail" resultType="kr.or.ddit.atch.vo.AtchFileDetailVO">
+		SELECT
+			<include refid="atchFileDetailColumns" />
+		FROM ATCH_FILE_DETAIL NATURAL JOIN ATCH_FILE
+		WHERE ATCH_FILE_ID = #{atchFileId} AND FILE_NUMBER = #{fileNumber} 
+				AND ATCH_USE_AT IS NOT NULL
+	</select>
+
+	<update id="incrementDowncount">
+		UPDATE ATCH_FILE_DETAIL
+		SET
+		FILE_DOWNCNT = FILE_DOWNCNT+1
+		WHERE ATCH_FILE_ID = #{atchFileId} AND FILE_NUMBER = #{fileNumber}
+	</update>
+
+	<update id="disableAtchFile">
+		UPDATE ATCH_FILE
+		SET ATCH_USE_AT = NULL
+		WHERE ATCH_FILE_ID = #{atchFileId}
+	</update>
+
+	<delete id="deleteAtchFileDetail">
+		DELETE FROM ATCH_FILE_DETAIL
+		WHERE ATCH_FILE_ID = #{atchFileId} AND FILE_NUMBER = #{fileNumber}
+	</delete>
+
+	<delete id="deleteDisabledAtchFile">
+		DELETE FROM ATCH_FILE
+		WHERE ATCH_FILE_ID = #{atchFileId} AND ATCH_USE_AT IS NULL
+	</delete>
+
+	<delete id="deleteDisabledAtchFileDetails">
+		DELETE FROM ATCH_FILE_DETAIL
+		WHERE ATCH_FILE_ID IN (
+			SELECT ATCH_FILE_ID
+			FROM ATCH_FILE
+			WHERE ATCH_FILE_ID = #{atchFileId} AND ATCH_USE_AT IS NULL
+		)
+	</delete>
+	
+	<select id="selectAtchFileList" resultMap="atchFileMap">
+		
+		SELECT 
+				A.ATCH_FILE_ID
+			, B.FILE_NUMBER
+			, B.FILE_STRE_PATH
+			, B.FILE_NAME
+			, B.ORIGINAL_FILE_NAME
+			, B.FILE_EXTENSION
+			, B.FILE_SIZE
+			, B.FILE_FANCYSIZE
+			, B.FILE_MIME
+			, B.FILE_DOWNCNT
+		FROM ATCH_FILE A
+		LEFT JOIN ATCH_FILE_DETAIL B ON(A.ATCH_FILE_ID = B.ATCH_FILE_ID)
+		WHERE A.ATCH_FILE_ID = #{atchFileId}
+		AND ATCH_USE_AT = 'Y'
+	</select>
+	
+	<select id="selectAtchFileCount" resultType="int">
+		SELECT COUNT(*)
+		FROM ATCH_FILE_DETAIL
+		WHERE ATCH_FILE_ID = #{atchFileId}
+	</select>
+</mapper>

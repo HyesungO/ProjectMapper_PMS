@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.resources.mapper.ResourcesMapper">
+	
+	<sql id="resourceCoulnms">
+		RESOURCE_ID
+		,RESOURCE_URI_ADDR
+		,RESOURCE_METHOD
+		,RESOURCE_NAME
+		,RESOURCE_ORDER
+		,RESOURCE_TYPE
+		,RESOURCE_COMMENT
+		,SIGNATURE_NAME
+	</sql>
+	
+	<select id="selectPjResourceList" resultType="ResourceVO">
+		SELECT 
+			<include refid="resourceCoulnms" />
+		FROM RESOURCES
+		WHERE RESOURCE_TYPE = '프로젝트'
+		AND USE_PROJECT_ROLE = 'Y'
+	</select>
+	
+	<select id="selectMemberResourceList" resultType="ResourceVO">
+		SELECT 
+		    A.RESOURCE_ID
+		    ,A.RESOURCE_URI_ADDR
+		    ,A.RESOURCE_METHOD
+		    ,A.RESOURCE_NAME
+		    ,A.RESOURCE_ORDER
+		    ,A.RESOURCE_TYPE
+		    ,A.RESOURCE_COMMENT
+		    ,A.SIGNATURE_NAME
+		    ,A.TABLE_NAME
+		FROM RESOURCES A
+		INNER JOIN PROJECT_ROLE B ON (A.RESOURCE_ID = B.RESOURCE_ID)
+		WHERE B.PJ_ROLE_ID = #{pjRoleId}
+	</select>
+	
+	<select id="selectResourceId" resultType="string">
+		SELECT RESOURCE_ID
+		FROM RESOURCES
+		WHERE SIGNATURE_NAME = #{signatureName}
+	</select>
+	
+	<select id="selectResource" resultType="ResourceVO">
+		SELECT A.*
+		FROM RESOURCES A
+		JOIN RESOURCES B
+		  ON A.RESOURCE_URI_ADDR = B.RESOURCE_URI_ADDR
+		WHERE A.RESOURCE_METHOD = 'GET'
+		  AND B.RESOURCE_METHOD IN ('POST', 'PUT', 'DELETE')
+		  AND B.RESOURCE_ID = #{resourceId}
+	</select>
+	
+	<select id="selectUriAddr" resultType="string">
+		SELECT RESOURCE_URI_ADDR
+		FROM RESOURCES
+		WHERE TABLE_NAME = #{tableName}
+		AND RESOURCE_COMMENT = '상세조회'
+	</select>
+</mapper>

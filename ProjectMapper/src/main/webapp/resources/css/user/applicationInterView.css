@@ -1,0 +1,68 @@
+.carrd {
+	margin-top: 60px;
+}
+
+.carrd .d-flex p {
+	padding: 1px;
+	margin-bottom: 2px;
+}
+
+.row {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 16px;
+	justify-content: flex-end;
+	align-items: start;
+}
+
+.carrd {
+	width: 100%;
+	background-color: #f8f9fa;
+	padding: 16px;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	text-align: left;
+}
+
+#categoryNav {
+	padding-bottom: 17px;
+}
+
+.deals-company-agent {
+	padding: 4px;
+}
+
+
+
+.btn-fixed {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	z-index: 1000;
+}
+
+.form-control {
+	width: 130px; /* input 필드 너비를 100%로 설정 */
+}
+
+#statusSelect {
+	background-color: #f8f9fa;
+	border: none;
+}
+
+.d-flex .form-label {
+	margin-bottom: 0; /* label 아래 여백 제거 */
+	white-space: nowrap; /* 텍스트가 줄바꿈되지 않도록 설정 */
+}
+
+.custom-link {
+    font-size: 12px; /* 글자 크기 조정 */
+    text-decoration: none; /* 기본 밑줄 제거 */
+    color: inherit; /* 부모 요소의 글자 색상 상속 */
+    margin-left: 70px; /* 오른쪽으로 이동 */
+    display: inline-block; /* inline 요소를 블록처럼 다루기 */
+}
+
+.custom-link:hover {
+    text-decoration: underline; /* 호버 시 밑줄 표시 (선택사항) */
+}

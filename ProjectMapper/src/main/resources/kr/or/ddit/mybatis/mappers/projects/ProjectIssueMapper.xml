@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.projectBoards.projectIsuue.mapper.ProjectIssueMapper">
+	
+	<sql id="issueColumns">
+		ISSUE_ID, ISSUE_REQUESTER_ID, ISSUE_HANDLER_ID, 
+		PJ_ID, ISSUE_TITLE, ISSUE_CONTENT, ISSUE_CREATED_DT, 
+		ISSUE_END_DT, ISSUE_IMP_CODE, ISSUE_TYPE_CODE, ISSUE_IS_HANDLED,
+		ISSUE_DUE_DATE, ISSUE_IS_DEL, ISSUE_AFI
+	</sql>
+	<sql id="issueColumnsDe">
+		ISSUE_ID, ISSUE_REQUESTER_ID, ISSUE_HANDLER_ID, 
+		ISSUE.PJ_ID, ISSUE_TITLE, ISSUE_CONTENT, ISSUE_CREATED_DT, 
+		ISSUE_END_DT, ISSUE_IMP_CODE, ISSUE_TYPE_CODE, ISSUE_IS_HANDLED,
+		ISSUE_DUE_DATE, ISSUE_IS_DEL, ISSUE_AFI
+	</sql>
+	<sql id="issueColumnsA">
+		A.ISSUE_ID, A.ISSUE_REQUESTER_ID, A.ISSUE_HANDLER_ID, A.PJ_ID, A.ISSUE_TITLE, A.ISSUE_CONTENT, A.ISSUE_CREATED_DT, A.ISSUE_END_DT, A.ISSUE_IMP_CODE, A.ISSUE_TYPE_CODE, A.ISSUE_IS_HANDLED, A.ISSUE_DUE_DATE, A.ISSUE_IS_DEL, A.ISSUE_AFI
+	</sql>
+	<sql id="issueCommentColumns">
+		B.ISSUE_COMMENT_ID, B.ISSUE_COMMENT_PARENT_ID, B.PJ_COMMENT_MEM_ID, B.ISSUE_COMMENT_CONTENT, B.ISSUE_COMMENT_CREATED_DT, B.ISSUE_COMMENT_MODI_DT, B.ISSUE_COMMENT_IS_DEL
+	</sql>
+	
+	<sql id="searchFrag">
+		<where>
+			<if test="simpleCondition neq null">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+					<choose>
+						<when test="simpleCondition.searchType eq 'name'">
+							USER_NAME LIKE '%'|| #{simpleCondition.searchWord} ||'%'
+						</when>
+<!-- 						<when test="simpleCondition.searchType eq 'role'"> -->
+<!-- 							INSTR(USER_ROLE, #{simpleCondition.searchWord})||'%' -->
+<!-- 						</when> -->
+						<otherwise>
+							INSTR(USER_ROLE, #{simpleCondition.searchWord}) > 0
+						</otherwise>
+					</choose>
+				</if>
+			</if>
+		</where>
+	</sql>
+	
+	<!-- paging -->
+	
+	<select id="selectTotalBoard" resultType="int">
+		SELECT COUNT(*)
+				
+			FROM ISSUE A
+			INNER JOIN CODE B ON (A.ISSUE_IMP_CODE = B.CODE_ID AND B.CODE_PAR_ID = 'I02')
+            INNER JOIN CODE C ON (A.ISSUE_TYPE_CODE = C.CODE_ID AND C.CODE_PAR_ID = 'I01')
+            <where>
+            	PJ_ID = #{pjId}
+				AND ISSUE_IS_DEL = 'N'
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+					<choose>
+						<when test="paging.simpleCondition.searchType eq 'issueTitle'">
+							AND INSTR(ISSUE_TITLE, #{paging.simpleCondition.searchWord}) > 0
+						</when>
+						<when test="paging.simpleCondition.searchType eq 'issueImpCode'">
+							AND INSTR(ISSUE_IMP_CODE, #{paging.simpleCondition.searchWord}) > 0
+						</when>
+						<when test="paging.simpleCondition.searchType eq 'issueTypeCode'">
+							AND INSTR(ISSUE_TYPE_CODE, #{paging.simpleCondition.searchWord}) > 0
+						</when>
+						<otherwise>
+							AND (
+								INSTR(ISSUE_TITLE, #{paging.simpleCondition.searchWord}) > 0
+								OR INSTR(ISSUE_IMP_CODE, #{paging.simpleCondition.searchWord}) > 0
+								OR INSTR(ISSUE_TYPE_CODE, #{paging.simpleCondition.searchWord}) > 0
+							)
+						</otherwise>
+					</choose>
+				</if>
+            </where>
+	</select>
+	<resultMap type="kr.or.ddit.projects.vo.IssueVO" id="issueSelectMap" autoMapping="true">
+		<association property="impCode" javaType="CodeVO">
+			<result property="codeName" column="IMP_CODE_NAME"/>
+		</association>
+		<association property="typeCode" javaType="CodeVO">
+			<result property="codeName" column="TYPE_CODE_NAME"/>
+		</association>
+		<association property="requesterName" javaType="UsersVO">
+			<result property="userName" column="REQ_USER_NAME"/>
+		</association>
+	</resultMap>
+
+	<!-- 연습용 -->
+	<select id="selectProjectIssueList" resultMap="issueSelectMap">
+		SELECT *
+		FROM(
+			SELECT 
+					ROWNUM AS RNUM,
+					A.*
+			FROM(
+				SELECT
+					<include refid="issueColumnsA"/>
+					, B.CODE_NAME AS IMP_CODE_NAME
+					, C.CODE_NAME AS TYPE_CODE_NAME
+					, D.PJ_MEM_ID
+					, D.USER_ID
+					, E.USER_NAME AS REQ_USER_NAME
+				FROM ISSUE A
+				INNER JOIN CODE B ON (A.ISSUE_IMP_CODE = B.CODE_ID AND B.CODE_PAR_ID = 'I02')
+	            INNER JOIN CODE C ON (A.ISSUE_TYPE_CODE = C.CODE_ID AND C.CODE_PAR_ID = 'I01')
+				INNER JOIN PROJECT_MEMBER D ON (A.ISSUE_REQUESTER_ID = D.PJ_MEM_ID)
+				INNER JOIN USERS E ON (D.USER_ID = E.USER_ID)
+	            <where>
+	            	A.PJ_ID = #{pjId}
+					AND A.ISSUE_IS_DEL = 'N'
+					<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+						<choose>
+							<when test="paging.simpleCondition.searchType eq 'issueTitle'">
+								AND INSTR(ISSUE_TITLE, #{paging.simpleCondition.searchWord}) > 0
+							</when>
+							<when test="paging.simpleCondition.searchType eq 'issueImpCode'">
+								AND INSTR(ISSUE_IMP_CODE, #{paging.simpleCondition.searchWord}) > 0
+							</when>
+							<when test="paging.simpleCondition.searchType eq 'issueTypeCode'">
+								AND INSTR(ISSUE_TYPE_CODE, #{paging.simpleCondition.searchWord}) > 0
+							</when>
+							<otherwise>
+								AND (
+									INSTR(ISSUE_TITLE, #{paging.simpleCondition.searchWord}) > 0
+									OR INSTR(ISSUE_IMP_CODE, #{paging.simpleCondition.searchWord}) > 0
+									OR INSTR(ISSUE_TYPE_CODE, #{paging.simpleCondition.searchWord}) > 0
+								)
+							</otherwise>
+						</choose>
+					</if>
+	            </where>
+	            ORDER BY A.ISSUE_CREATED_DT DESC
+			) A
+		)
+		<![CDATA[
+		WHERE RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+		]]>
+		
+	</select>
+	
+	<insert id="insertIssue">
+		<selectKey order="BEFORE" resultType="string" keyProperty="issueId">
+			SELECT 'IS' || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(ISSUE_ID),3)),0)+1,6,'0')
+			FROM ISSUE
+		</selectKey>
+		INSERT INTO issue (
+			<include refid="issueColumns" />
+		) VALUES (
+			  #{issueId,jdbcType=VARCHAR}
+			, #{issueRequesterId,jdbcType=VARCHAR}
+			, #{issueHandlerId,jdbcType=VARCHAR}
+			, #{pjId,jdbcType=VARCHAR}
+			, #{issueTitle,jdbcType=VARCHAR}
+			, #{issueContent,jdbcType=CLOB}
+			, SYSDATE
+			, #{issueEndDt,jdbcType=DATE}
+			, #{issueImpCode,jdbcType=CHAR}
+			, #{issueTypeCode,jdbcType=CHAR}
+			, 'N'
+			, #{issueDueDate,jdbcType=VARCHAR}
+			, 'N'
+			, #{issueAfi,jdbcType=NUMERIC}
+		)
+	</insert>
+	
+	<select id="selectIssueList" resultType="kr.or.ddit.projects.vo.IssueVO">
+		SELECT
+			<include refid="issueColumns" />
+		FROM ISSUE
+		WHERE PJ_ID = #{pjId}
+	</select>
+	
+	<resultMap type="kr.or.ddit.projects.vo.IssueVO" id="issueMap" autoMapping="true">
+		<id property="issueId" column="ISSUE_ID" />
+		<result property="issueAfi" column="ISSUE_AFI" />
+		<association property="atchFile" column="ISSUE_AFI"
+			select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+			<!-- 대신 조인할 수 있다 다른곳에 있는 쿼리문을 사용 -->
+		<association property="impCode" javaType="CodeVO">
+			<result property="codeName" column="IMP_CODE_NAME"/>
+		</association>
+		<association property="typeCode" javaType="CodeVO">
+			<result property="codeName" column="TYPE_CODE_NAME"/>
+		</association>
+		<association property="roleCode" javaType="CodeVO">
+			<result property="codeName" column="ROLE_CODE_NAME"/>
+		</association>
+		<association property="requesterName" javaType="UsersVO">
+			<result property="userName" column="REQUESTER_NAME"/>
+			<result property="userId" column="REQUESTER_USER_ID"/>
+		</association>
+		<association property="handlerName" javaType="UsersVO">
+			<result property="userName" column="HANDLER_NAME"/>
+			<result property="userId" column="HANDLER_USER_ID"/>
+		</association>
+		<association property="projectMember" javaType="kr.or.ddit.projects.vo.ProjectMemberVO">
+			<result property="pjMemRoleTypeCode" column="PJ_MEM_ROLE_TYPE_CODE"/>
+			<result property="pjRoleId" column="PJ_ROLE_ID"/>
+		</association>
+		<association property="projectRoleName" javaType="kr.or.ddit.projects.vo.ProjectRoleNameVO">
+			<result property="pjRoleName" column="PJ_ROLE_NAME"/>
+		</association>
+		<association property="requesterProfileName" javaType="string">
+			<result property="requesterProfileName" column="REQUESTER_FILE_NAME"/>
+		</association>
+		<association property="handlerProfileName" javaType="string">
+			<result property="handlerProfileName" column="HANDLER_FILE_NAME"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectIssue" resultMap="issueMap">
+		WITH R_NAME AS(
+		SELECT 
+			<include refid="issueColumnsDe" />
+		    , A.PJ_MEM_ROLE_TYPE_CODE
+    		, A.PJ_ROLE_ID
+		    , B.USER_NAME AS REQUESTER_NAME
+		    , B.USER_ID AS REQUESTER_USER_ID
+            , B.USER_PROFILE_AFI AS REQUESTER_USER_PROFILE_AFI
+		    , C.PJ_ROLE_NAME
+		    , D.CODE_NAME AS ROLE_CODE_NAME
+            , E.FILE_NAME AS REQUESTER_FILE_NAME
+		FROM ISSUE
+		INNER JOIN PROJECT_MEMBER A ON (ISSUE_REQUESTER_ID = A.PJ_MEM_ID)
+		INNER JOIN CODE D ON (A.PJ_MEM_ROLE_TYPE_CODE = D.CODE_ID)
+		INNER JOIN USERS B ON (A.USER_ID = B.USER_ID)
+		LEFT OUTER JOIN ATCH_FILE_DETAIL E ON (B.USER_PROFILE_AFI = E.ATCH_FILE_ID)
+		LEFT OUTER JOIN PROJECT_ROLE_NAME C ON (A.PJ_ROLE_ID = C.PJ_ROLE_ID)
+		WHERE ISSUE_IS_DEL = 'N'
+		AND ISSUE_ID = #{issueId}
+		),
+		H_NAME AS(
+		SELECT R_NAME.*
+		   ,  B.USER_NAME AS HANDLER_NAME
+		   ,  B.USER_ID AS HANDLER_USER_ID
+		   ,  B.USER_PROFILE_AFI AS HANDLER_USER_PROFILE_AFI
+           ,  C.FILE_NAME AS HANDLER_FILE_NAME 
+		FROM R_NAME
+		LEFT OUTER JOIN PROJECT_MEMBER A ON (ISSUE_HANDLER_ID = A.PJ_MEM_ID)
+		LEFT OUTER JOIN USERS B ON (A.USER_ID = B.USER_ID)
+		LEFT OUTER JOIN ATCH_FILE_DETAIL C ON (B.USER_PROFILE_AFI = C.ATCH_FILE_ID)
+		)
+		SELECT H_NAME.*
+		    , B.CODE_NAME AS IMP_CODE_NAME
+		    , C.CODE_NAME AS TYPE_CODE_NAME
+		FROM H_NAME
+		INNER JOIN CODE B ON (H_NAME.ISSUE_IMP_CODE = B.CODE_ID AND B.CODE_PAR_ID = 'I02')
+		INNER JOIN CODE C ON (H_NAME.ISSUE_TYPE_CODE = C.CODE_ID AND C.CODE_PAR_ID = 'I01')
+
+	</select>
+	
+	<update id="updateIssue">
+		UPDATE ISSUE
+		SET
+			<if test="issueHandlerId neq null">
+			 ISSUE_HANDLER_ID = #{issueHandlerId,jdbcType=VARCHAR},
+			</if>
+			<if test="issueEndDt neq null">
+			 ISSUE_END_DT = #{issueEndDt,jdbcType=DATE},
+			</if>
+			 ISSUE_TITLE = #{issueTitle,jdbcType=VARCHAR},
+			 ISSUE_CONTENT = #{issueContent,jdbcType=CLOB},
+			 ISSUE_IMP_CODE = #{issueImpCode,jdbcType=CHAR},
+			 ISSUE_TYPE_CODE = #{issueTypeCode,jdbcType=CHAR},
+			 ISSUE_DUE_DATE = #{issueDueDate,jdbcType=CHAR},
+			 ISSUE_AFI = #{issueAfi,jdbcType=NUMERIC}
+		WHERE
+        	 ISSUE_ID = #{issueId}
+	</update>
+	
+	<update id="deleteIssue">
+		UPDATE ISSUE
+		SET
+			 ISSUE_IS_DEL = 'Y'
+		WHERE
+        	 ISSUE_ID = #{issueId}
+	</update>
+	
+	
+</mapper>

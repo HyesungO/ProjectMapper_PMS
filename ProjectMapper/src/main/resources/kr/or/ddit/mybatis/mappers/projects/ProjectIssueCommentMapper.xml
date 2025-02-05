@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.comment.mapper.ProjectIssueCommentMapper">
+	
+	<sql id="issueCommentColumns">
+  		ISSUE_COMMENT_ID, 
+		ISSUE_COMMENT_PARENT_ID, 
+		ISSUE_ID, 
+		PJ_COMMENT_MEM_ID,
+		ISSUE_COMMENT_CONTENT, 
+		ISSUE_COMMENT_CREATED_DT, 
+		ISSUE_COMMENT_MODI_DT, 
+		ISSUE_COMMENT_IS_DEL
+	</sql>
+	
+	<insert id="insertIssueComment">
+		<selectKey order="BEFORE" resultType="string" keyProperty="issueCommentId">
+			SELECT 'IC' || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(ISSUE_COMMENT_ID),3)),0)+1,7,'0')
+			FROM ISSUE_COMMENT
+		</selectKey>
+		INSERT INTO ISSUE_COMMENT (
+		    <include refid="issueCommentColumns" />
+		) VALUES (
+		      #{issueCommentId,jdbcType=VARCHAR}
+			, #{issueCommentParentId,jdbcType=VARCHAR}
+			, #{issueId,jdbcType=VARCHAR}
+			, #{pjCommentMemId,jdbcType=VARCHAR}
+			, #{issueCommentContent,jdbcType=VARCHAR}
+			, SYSDATE
+			, #{issueCommentModiDt,jdbcType=DATE}
+			, 'N'
+			)
+	</insert>
+	
+	
+	
+	<select id="selelctIssueCommentList" resultType="kr.or.ddit.projects.vo.IssueCommentVO">
+	   SELECT 
+		    USER_NAME,
+		    <include refid="issueCommentColumns" />
+		    
+		FROM 
+		    ISSUE_COMMENT
+		INNER JOIN project_member ON project_member.pj_mem_id = ISSUE_COMMENT.PJ_COMMENT_MEM_ID
+		INNER JOIN users ON users.user_id = project_member.user_id
+		WHERE 
+		    ISSUE_ID = #{issueId}
+		    AND ISSUE_COMMENT_IS_DEL = 'N'
+		START WITH 
+		    ISSUE_COMMENT_PARENT_ID IS NULL 
+		CONNECT BY 
+		    PRIOR ISSUE_COMMENT_ID = ISSUE_COMMENT_PARENT_ID 
+		ORDER SIBLINGS BY 
+		    ISSUE_COMMENT_CREATED_DT
+                   
+	</select>
+	
+	
+	
+	
+	<select id="selectComment" resultType="kr.or.ddit.projects.vo.IssueCommentVO">
+	
+			SELECT
+			USER_NAME,
+		    <include refid="issueCommentColumns" />
+		    
+			FROM
+			    ISSUE_COMMENT
+			INNER JOIN project_member ON project_member.pj_mem_id = ISSUE_COMMENT.PJ_COMMENT_MEM_ID
+			INNER JOIN users ON (users.user_id = project_member.user_id)
+			WHERE ISSUE_COMMENT_ID = #{issueCommentId}
+			AND ISSUE_COMMENT_IS_DEL = 'N'
+		
+	
+	
+	
+	</select>
+	
+	
+	<update id="updateIssueComment">
+		UPDATE ISSUE_COMMENT
+		SET
+			ISSUE_COMMENT_CONTENT = #{issueCommentContent,jdbcType=VARCHAR}
+			,ISSUE_COMMENT_MODI_DT = SYSDATE
+		WHERE
+        	ISSUE_COMMENT_ID = #{issueCommentId}
+	</update>
+	
+	
+	<delete id="deleteIssueComment">
+		UPDATE ISSUE_COMMENT
+		SET
+			ISSUE_COMMENT_IS_DEL = 'Y'
+		WHERE
+        	ISSUE_COMMENT_ID = #{issueCommentId}
+	</delete>
+</mapper>

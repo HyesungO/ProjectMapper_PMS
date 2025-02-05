@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.task.mapper.TaskMapper">
+	
+	<select id="selectTotalBoard" resultType="int">
+		SELECT COUNT(*)
+		FROM TASK_BOARD
+		INNER JOIN PROJECT_MEMBER ON (PROJECT_MEMBER.PJ_MEM_ID = TASK_BOARD.TASK_ASSIGNEE_ID)
+		INNER JOIN USERS ON (PROJECT_MEMBER.USER_ID = USERS.USER_ID)
+		<where>
+			TASK_BOARD.PJ_ID = #{pjId}
+				AND TASK_BOARD.TASK_IS_DEL = 'N'
+				AND TASK_PARENT_ID IS NULL
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+				<choose>
+					<when test="paging.simpleCondition.searchType eq 'taskName'">
+						AND INSTR(TASK_NAME, #{paging.simpleCondition.searchWord}) > 0
+					</when>
+					<when test="paging.simpleCondition.searchType eq 'taskAssigneeId'">
+						AND INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0
+					</when>
+					<otherwise>
+						AND (
+							INSTR(TASK_NAME, #{paging.simpleCondition.searchWord}) > 0 
+							OR INSTR(TASK_ASSIGNEE_ID, #{paging.simpleCondition.searchWord}) > 0 
+						)
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</select>
+
+	<resultMap type="kr.or.ddit.projects.vo.TaskBoardVO" id="taskMap" autoMapping="true">
+		<id property="taskId" column="TASK_ID" />
+		<result property="taskAfi" column="ATCH_FILE_ID" />
+		<association property="atchFile" column="ATCH_FILE_ID"
+			select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+	</resultMap>
+
+	<select id="selectTaskBoardList" resultMap="taskMap">
+		SELECT B.*
+		FROM
+		(
+			SELECT ROWNUM RNUM, A.*
+			FROM
+				(
+					SELECT TASK_ID, TASK_PARENT_ID, TASK_INSTRUCTER_ID
+			       			, TASK_ASSIGNEE_ID, TASK_BOARD.PJ_ID, TASK_NAME, TASK_CONTENT
+			        		, TASK_CREATED_DATE, TASK_START_DATE, TASK_END_DATE
+			        		, TASK_IMPORTANCE_CODE, TASK_ST_CODE, TASK_PROGRESS
+			        		, TASK_AFI, TASK_IS_DEL
+			        		, USER_NAME
+					FROM TASK_BOARD
+					INNER JOIN PROJECT_MEMBER ON (PROJECT_MEMBER.PJ_MEM_ID = TASK_BOARD.TASK_ASSIGNEE_ID)
+					INNER JOIN USERS ON (PROJECT_MEMBER.USER_ID = USERS.USER_ID)
+					<where>
+						TASK_BOARD.PJ_ID = #{pjId}
+							AND TASK_BOARD.TASK_IS_DEL = 'N'
+							AND TASK_PARENT_ID IS NULL
+						<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+							<choose>
+								<when test="paging.simpleCondition.searchType eq 'taskName'">
+									AND INSTR(TASK_NAME, #{paging.simpleCondition.searchWord}) > 0
+								</when>
+								<when test="paging.simpleCondition.searchType eq 'taskAssigneeId'">
+									AND INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0
+								</when>
+								<otherwise>
+									AND (
+										INSTR(TASK_NAME, #{paging.simpleCondition.searchWord}) > 0 
+										OR INSTR(TASK_ASSIGNEE_ID, #{paging.simpleCondition.searchWord}) > 0 
+									)
+								</otherwise>
+							</choose>
+						</if>
+					</where>
+					ORDER BY TASK_ID DESC, TASK_PARENT_ID DESC
+				) A
+		) B
+		<![CDATA[
+			WHERE RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+		]]>
+	</select>
+	
+	<select id="selectTaskBoardChildList" resultMap="taskMap">
+		SELECT B.*
+		FROM
+		(
+			SELECT ROWNUM RNUM, A.*
+			FROM
+				(
+					SELECT TASK_ID, TASK_PARENT_ID, TASK_INSTRUCTER_ID
+			       			, TASK_ASSIGNEE_ID, TASK_BOARD.PJ_ID, TASK_NAME, TASK_CONTENT
+			        		, TASK_CREATED_DATE, TASK_START_DATE, TASK_END_DATE
+			        		, TASK_IMPORTANCE_CODE, TASK_ST_CODE, TASK_PROGRESS
+			        		, TASK_AFI, TASK_IS_DEL
+			        		, USER_NAME
+					FROM TASK_BOARD
+					INNER JOIN PROJECT_MEMBER ON (PROJECT_MEMBER.PJ_MEM_ID = TASK_BOARD.TASK_ASSIGNEE_ID)
+					INNER JOIN USERS ON (PROJECT_MEMBER.USER_ID = USERS.USER_ID)
+					<where>
+						TASK_BOARD.PJ_ID = #{pjId}
+							AND TASK_BOARD.TASK_IS_DEL = 'N'
+							AND TASK_PARENT_ID IS NOT NULL
+						<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+							<choose>
+								<when test="paging.simpleCondition.searchType eq 'taskName'">
+									AND INSTR(TASK_NAME, #{paging.simpleCondition.searchWord}) > 0
+								</when>
+								<when test="paging.simpleCondition.searchType eq 'taskAssigneeId'">
+									AND INSTR(USER_NAME, #{paging.simpleCondition.searchWord}) > 0
+								</when>
+								<otherwise>
+									AND (
+										INSTR(TASK_NAME, #{paging.simpleCondition.searchWord}) > 0 
+										OR INSTR(TASK_ASSIGNEE_ID, #{paging.simpleCondition.searchWord}) > 0 
+									)
+								</otherwise>
+							</choose>
+						</if>
+					</where>
+					ORDER BY TASK_ID DESC, TASK_PARENT_ID DESC
+				) A
+		) B
+	</select>
+	
+	<select id="selectTaskBoard" resultMap="taskMap">
+		SELECT TASK_ID, TASK_PARENT_ID, TASK_INSTRUCTER_ID
+       			, TASK_ASSIGNEE_ID, TASK_BOARD.PJ_ID, TASK_NAME, TASK_CONTENT
+        		, TASK_CREATED_DATE, TASK_START_DATE, TASK_END_DATE
+        		, TASK_IMPORTANCE_CODE, TASK_ST_CODE, TASK_PROGRESS
+        		, TASK_AFI, TASK_IS_DEL
+        		, USER_NAME, CODE_NAME, (SELECT ATCH_FILE_ID
+											FROM ATCH_FILE
+											WHERE ATCH_FILE_ID = (SELECT TASK_AFI FROM TASK_BOARD WHERE TASK_ID = #{taskId})) AS ATCH_FILE_ID
+		FROM TASK_BOARD
+		INNER JOIN PROJECT_MEMBER ON (PROJECT_MEMBER.PJ_MEM_ID = TASK_BOARD.TASK_ASSIGNEE_ID)
+		INNER JOIN USERS ON (PROJECT_MEMBER.USER_ID = USERS.USER_ID)
+		INNER JOIN CODE ON (TASK_BOARD.TASK_IMPORTANCE_CODE = CODE.CODE_ID)
+		WHERE TASK_ID = #{taskId}
+	</select>
+	
+	<insert id="insertTaskBoard" parameterType="kr.or.ddit.projects.vo.TaskBoardVO">
+		<selectKey order="BEFORE" resultType="string" keyProperty="taskId">
+			SELECT 'TB' || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(TASK_ID,3)))+1,0),6,'0')
+			FROM TASK_BOARD		
+		</selectKey>
+		INSERT INTO task_board (
+		     TASK_ID
+		    ,TASK_PARENT_ID
+		    ,TASK_INSTRUCTER_ID
+		    ,TASK_ASSIGNEE_ID
+		    ,PJ_ID
+		    ,TASK_NAME
+		    ,TASK_CONTENT
+		    ,TASK_CREATED_DATE
+		    ,TASK_START_DATE
+		    ,TASK_END_DATE
+		    ,TASK_IMPORTANCE_CODE
+		    ,TASK_AFI
+		) VALUES (
+		    #{taskId}
+			,#{taskParentId}
+			,#{taskInstructerId}
+			,#{taskAssigneeId}
+			,#{pjId}
+			,#{taskName}
+			,#{taskContent}
+			,#{taskCreatedDate}
+			,#{taskStartDate}
+			,#{taskEndDate}
+			,#{taskImportanceCode}
+			,#{taskAfi}
+		)
+	</insert>
+	
+	<update id="updateTaskBoard">
+		UPDATE TASK_BOARD
+		SET
+		    TASK_PARENT_ID = #{taskParentId}
+		    ,TASK_INSTRUCTER_ID = #{taskInstructerId}
+		    ,TASK_ASSIGNEE_ID = #{taskAssigneeId}
+		    ,PJ_ID = #{pjId}
+		    ,TASK_NAME = #{taskName}
+		    ,TASK_CONTENT = #{taskContent}
+		    ,TASK_CREATED_DATE = #{taskCreatedDate}
+		    ,TASK_START_DATE = #{taskStartDate}
+		    ,TASK_END_DATE = #{taskEndDate}
+		    ,TASK_IMPORTANCE_CODE = #{taskImportanceCode}
+		    ,TASK_PROGRESS = #{taskProgress}
+		    ,TASK_AFI = #{taskAfi}
+		WHERE TASK_ID = #{taskId}
+	</update>
+	<!-- TASK_ST_CODE = #{taskStCode}	업무 진행도 -->	
+	
+	<update id="updateTaskProgress" parameterType="kr.or.ddit.projects.vo.TaskBoardVO">
+		UPDATE TASK_BOARD
+		SET
+			TASK_PROGRESS = #{taskProgress}
+		WHERE TASK_ID = #{taskId}
+	</update>
+	
+	<delete id="deleteTaskBoard">
+		UPDATE TASK_BOARD
+		SET
+			TASK_IS_DEL = 'Y'
+		WHERE TASK_ID = #{taskId}
+	</delete>
+	
+	<resultMap type="kr.or.ddit.projects.vo.ProjectMemberVO" id="projectMemberMap">
+		<id property="pjMemId" column="pj_mem_id"/>
+		<association property="user" javaType="kr.or.ddit.users.vo.UsersVO">
+			<result property="userName" column="user_name"/>
+		</association>
+	</resultMap>
+	
+	<select id="getAssigneeList" resultMap="projectMemberMap">
+		SELECT PJ_MEM_ID, USER_NAME
+		FROM PROJECT_MEMBER
+		INNER JOIN USERS ON (USERS.USER_ID = PROJECT_MEMBER.USER_ID)
+		WHERE PROJECT_MEMBER.PJ_ID = #{pjId}
+	</select>
+	
+	<select id="selectTotalTaskWithpjId" resultType="int">
+		SELECT COUNT(*)
+		FROM TASK_BOARD
+		WHERE PJ_ID = #{pjId}
+	</select>
+	
+	
+</mapper>

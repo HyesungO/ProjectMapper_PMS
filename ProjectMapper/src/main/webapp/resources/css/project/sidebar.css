@@ -1,0 +1,19 @@
+@charset "UTF-8";
+
+.nav-item-wrapper{
+	padding-top: 3px;
+	padding-bottom:3px;
+}
+span.nav-link-text-wrapper{
+	margin-top:4px;
+}
+span.nav-link-text {
+    font-size: 15px;
+/*     margin-top:1px; */
+}
+.navbar-vertical.navbar-expand-lg .navbar-vertical-content .navbar-nav .nav .nav-link{
+	padding-left:2.8rem;
+}
+p.navbar-vertical-label{
+	font-size : 0.9rem;
+}

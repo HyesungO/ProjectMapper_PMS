@@ -1,0 +1,38 @@
+@charset "UTF-8";
+
+  /* 공통 스타일 */
+  .custom-btn {
+    display: inline-block;
+    color: white; /* 텍스트 색상을 흰색으로 설정 */
+    background: none; /* 배경 제거 */
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    position: relative;
+    transition: color 0.3s ease;
+  }
+
+  /* 호버 및 포커스 효과 */
+  .custom-btn:hover,
+  .custom-btn:focus {
+    color: #007bff; /* 호버 시 텍스트 색상 변경 (파랑 강조) */
+  }
+
+  /* 밑줄 애니메이션 */
+  .custom-btn::after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 2px;
+    background: #007bff; /* 밑줄 색상 */
+    transition: width 0.3s ease;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+  }
+
+  .custom-btn:hover::after {
+    width: 100%; /* 밑줄이 텍스트 길이만큼 확대 */
+  }

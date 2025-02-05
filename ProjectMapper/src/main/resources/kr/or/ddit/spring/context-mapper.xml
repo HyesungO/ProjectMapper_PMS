@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+   xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+      http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+<!--    spring-mybatis 연동 빈 등록 -->
+   <bean class="org.mybatis.spring.SqlSessionFactoryBean" id="sqlSessionFactory">
+      <property name = "configLocation" value="classpath:kr/or/ddit/mybatis/Configuration.xml" />
+      <property name = "mapperLocations" value="classpath:kr/or/ddit/mybatis/mappers/*/*.xml" />
+      <property name = "dataSource" ref="dataSource" /> 
+   </bean>
+   
+   <bean class="org.mybatis.spring.SqlSessionTemplate" id="sqlSessionTemplate">
+      <constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory" />
+   </bean>
+   
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer" id="mapperScannerConfigurer">
+      <property name="basePackage" value="kr.or.ddit.**.mapper" />
+      <property name="annotationClass" value="org.apache.ibatis.annotations.Mapper" />
+      <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+   </bean>
+<!--    이걸 아래 코드로 간단하게 적을 수 있음  -->
+
+   <mybatis-spring:scan base-package="kr.or.ddit.**.mapper"
+      annotation="org.apache.ibatis.annotations.Mapper"
+      factory-ref="sqlSessionFactory"
+   />
+</beans>

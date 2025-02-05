@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.projects.dailyTasks.dailyTask.mapper.DailyTaskMapper">
+
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(*)
+		FROM daily_report
+		INNER JOIN project_member ON (project_member.pj_mem_id = daily_report.pj_mem_id)
+		INNER JOIN users ON (project_member.user_id = users.user_id)
+		<where>
+			daily_report.pj_id = #{pjId} AND daily_report.dreport_is_del = 'N'
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+				<choose>
+					<when test="paging.simpleCondition.searchType eq 'dreportTitle'">
+						AND INSTR(dreport_title, #{paging.simpleCondition.searchWord}) > 0
+					</when>
+					<when test="paging.simpleCondition.searchType eq 'dreportId'">
+						AND INSTR(user_name, #{paging.simpleCondition.searchWord}) > 0
+					</when>
+					<otherwise>
+						AND (
+							INSTR(dreport_title, #{paging.simpleCondition.searchWord}) > 0 
+							OR INSTR(pj_mem_id, #{paging.simpleCondition.searchWord}) > 0 
+						)
+					</otherwise>
+				</choose>
+			</if>
+			<if test="paging.simpleCondition.dreportIsHandled != null and paging.simpleCondition.dreportIsHandled != ''">
+				AND dreport_is_handled = #{paging.simpleCondition.dreportIsHandled}
+			</if>
+		</where>
+	</select>
+
+	<resultMap id="dailyTaskMap" type="kr.or.ddit.projects.vo.DailyTaskVO" autoMapping="true">
+		<association property="users" javaType="kr.or.ddit.users.vo.UsersVO">
+			<result property="userName" column="USER_NAME" javaType="string"/>
+		</association>
+		<association property="atchFile" column="ATCH_FILE_ID" select="kr.or.ddit.atch.mapper.AtchFileMapper.selectAtchFileEnable" />
+	</resultMap>
+
+	<select id="selectDailyTaskList" resultMap="dailyTaskMap">
+		SELECT B.*
+		FROM (
+			SELECT rownum as rnum, A.*
+			FROM (
+				SELECT
+					 dreport_id
+					,daily_report.pj_mem_id
+					,daily_report.pj_id
+					,dreport_title
+					,dreport_content
+					,dreport_created_dt
+					,dreport_modi_dt
+					,dreport_is_handled
+					,atch_file_id
+					,dreport_is_del
+					, user_name
+				FROM daily_report
+				INNER JOIN project_member ON (project_member.pj_mem_id = daily_report.pj_mem_id)
+				INNER JOIN users ON (users.user_id = project_member.user_id)
+				<where>
+					daily_report.pj_id = #{pjId} AND daily_report.dreport_is_del = 'N' 
+					<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+						<choose>
+							<when test="paging.simpleCondition.searchType eq 'dreportTitle'">
+								AND INSTR(dreport_title, #{paging.simpleCondition.searchWord}) > 0
+							</when>
+							<when test="paging.simpleCondition.searchType eq 'dreportId'">
+								AND INSTR(user_name, #{paging.simpleCondition.searchWord}) > 0
+							</when>
+							<otherwise>
+								AND (
+									INSTR(dreport_title, #{paging.simpleCondition.searchWord}) > 0 
+									OR INSTR(pj_mem_id, #{paging.simpleCondition.searchWord}) > 0 
+								)
+							</otherwise>
+						</choose>
+					</if>
+					<if test="paging.simpleCondition.dreportIsHandled != null and paging.simpleCondition.dreportIsHandled != ''">
+						AND dreport_is_handled = #{paging.simpleCondition.dreportIsHandled}
+					</if>
+				</where>
+				ORDER BY dreport_id DESC
+			) A
+		)B
+		<![CDATA[
+			WHERE rnum >= #{paging.startRow} AND rnum <= #{paging.endRow}
+		]]>
+	</select>
+	
+	<select id="selectDailyTask" resultMap="dailyTaskMap">
+		SELECT
+			 dreport_id
+			,A.pj_mem_id
+			,A.pj_id
+			,dreport_title
+			,dreport_content
+			,dreport_created_dt
+			,dreport_modi_dt
+			,dreport_is_handled
+			,atch_file_id
+			,dreport_is_del
+			, user_name
+		FROM daily_report A
+		INNER JOIN project_member ON (project_member.pj_mem_id = A.pj_mem_id)
+		INNER JOIN users ON (users.user_id = project_member.user_id)
+		WHERE A.dreport_id = #{dreportId}
+	</select>
+	
+	<insert id="insertDailyTask" parameterType="kr.or.ddit.projects.vo.DailyTaskVO">
+		INSERT INTO daily_report (
+		     dreport_id
+		    ,pj_mem_id
+		    ,pj_id
+		    ,dreport_title
+		    ,dreport_content
+		    ,atch_file_id
+		) VALUES (
+		     (SELECT 'DR' || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(dreport_id,3))),0)+1,6,'0')
+				FROM daily_report)
+		    ,#{pjMemId}
+		    ,#{pjId}
+		    ,#{dreportTitle}
+		    ,#{dreportContent}
+		    ,#{atchFileId}
+		)
+	</insert>
+	
+	<update id="updateDailyTask">
+		UPDATE daily_report
+		SET
+			 dreport_title = #{dreportTitle}
+			,dreport_content = #{dreportContent}
+			,dreport_modi_dt = SYSDATE
+			,dreport_is_handled = #{dreportIsHandled}
+			,atch_file_id = #{atchFileId}
+		WHERE dreport_id = #{dreportId}
+	</update>
+	
+	<delete id="deleteDailyTask">
+		UPDATE daily_report
+		SET
+			dreport_is_del = 'Y'
+		WHERE dreport_id = #{dreportId}
+	</delete>
+
+</mapper>

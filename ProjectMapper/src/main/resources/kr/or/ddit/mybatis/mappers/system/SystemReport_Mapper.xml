@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.system.report.mapper.SystemReportMapper">
+	
+	<resultMap type="kr.or.ddit.notication.vo.ReportVO" id="ReportListMap" autoMapping="true">
+	    <association property="users" javaType="UsersVO" autoMapping="true"/>
+	</resultMap>
+
+
+
+
+
+
+
+	<select id="selectTotalRecord" resultType="int">
+    SELECT COUNT(*)
+    FROM REPORT
+    <where>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+            <choose>
+                <when test="paging.simpleCondition.searchType eq 'UserId'">
+                    AND INSTR(REPORTED_ID, #{paging.simpleCondition.searchWord}) > 0
+                </when>
+                <when test="paging.simpleCondition.searchType eq 'title'">
+                    AND INSTR(REPORT_TITLE, #{paging.simpleCondition.searchWord}) > 0
+                </when>
+                <when test="paging.simpleCondition.searchType eq 'stcode'">
+                    AND INSTR(REPORT_ST_CODE, #{paging.simpleCondition.searchWord}) > 0
+                </when>
+<!--                 <when test="paging.simpleCondition.searchType eq 'cateCode'"> -->
+<!--                     AND INSTR(REPORT_CATE_CODE, #{paging.simpleCondition.searchWord}) > 0 -->
+<!--                 </when> -->
+                <otherwise>
+                    AND (
+                        INSTR(REPORTED_ID, #{paging.simpleCondition.searchWord}) > 0 
+                        OR INSTR(REPORT_TITLE, #{paging.simpleCondition.searchWord}) > 0 
+                        OR INSTR(REPORT_ST_CODE, #{paging.simpleCondition.searchWord}) > 0 
+<!--                         OR INSTR(REPORT_CATE_CODE, #{paging.simpleCondition.searchWord}) > 0  -->
+                    )
+                </otherwise>
+            </choose>
+        </if>
+    </where>
+</select>
+	
+	<select id="selectSystemReportList" resultMap="ReportListMap">
+	    SELECT B.*
+	    FROM (
+	        SELECT ROWNUM RNUM, A.*
+	        FROM (
+	           SELECT 
+				    (SELECT USER_NAME FROM USERS WHERE USERS.USER_ID = REPORT.REPORTER_ID) AS REPORT_USER_NAME,
+				    (SELECT USER_NAME FROM USERS WHERE USERS.USER_ID = REPORT.REPORTED_ID) AS REPORTER_USER_NAME,
+				    REPORT.REPORT_ID,
+				    REPORT.REPORTER_ID,
+				    REPORT.REPORTED_ID,
+				    REPORT.ADMIN_ID,
+				    REPORT.REPORT_PJ_POST_ID,
+				    REPORT.REPORT_PJ_ID,
+				    REPORT.REPORT_DT,
+				    REPORT.REPORT_TITLE,
+				    REPORT.REPORT_CONTENT,
+				    REPORT.REPORT_AFI,
+				    REPORT.REPORT_ST_CODE,
+				    REPORT.REPORT_PENALTY_REASON,
+				    REPORT.REPORT_HANDLED_DT,
+				    CODE.CODE_NAME,  
+				    (SELECT CODE_NAME FROM CODE WHERE CODE.CODE_ID = REPORTER_USERS.USER_ST_CODE) AS CODE_NAME2,
+				    (SELECT CODE_NAME FROM CODE WHERE CODE.CODE_ID = REPORTED_USERS.USER_ST_CODE) AS CODE_NAME3
+				FROM REPORT
+				INNER JOIN CODE ON CODE.CODE_ID = REPORT.REPORT_CATE_CODE
+				INNER JOIN USERS REPORTER_USERS ON REPORTER_USERS.USER_ID = REPORT.REPORTER_ID
+				INNER JOIN USERS REPORTED_USERS ON REPORTED_USERS.USER_ID = REPORT.REPORTED_ID
+				ORDER BY REPORT.REPORT_ST_CODE ASC
+	            <where>
+	                <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+	                    <choose>
+	                        <when test="paging.simpleCondition.searchType eq 'UserId'">
+	                            AND INSTR(REPORTED_ID, #{paging.simpleCondition.searchWord}) > 0
+	                        </when>
+	                        <when test="paging.simpleCondition.searchType eq 'title'">
+	                            AND INSTR(REPORT_TITLE, #{paging.simpleCondition.searchWord}) > 0
+	                        </when>
+	                        <when test="paging.simpleCondition.searchType eq 'stcode'">
+	                            AND INSTR(REPORT_ST_CODE, #{paging.simpleCondition.searchWord}) > 0
+	                        </when>
+<!-- 	                        <when test="paging.simpleCondition.searchType eq 'cateCode'"> -->
+<!-- 	                            AND INSTR(REPORT_CATE_CODE, #{paging.simpleCondition.searchWord}) > 0 -->
+<!-- 	                        </when> -->
+	                        <otherwise>
+	                            AND (
+	                                INSTR(REPORTED_ID, #{paging.simpleCondition.searchWord}) > 0 
+	                                OR INSTR(REPORT_TITLE, #{paging.simpleCondition.searchWord}) > 0 
+	                                OR INSTR(REPORT_ST_CODE, #{paging.simpleCondition.searchWord}) > 0 
+<!-- 	                                OR INSTR(REPORT_CATE_CODE, #{paging.simpleCondition.searchWord}) > 0  -->
+	                            )
+	                        </otherwise>
+	                    </choose>
+	                </if>
+	            </where>
+	        ) A
+	    ) B
+	    WHERE RNUM BETWEEN #{paging.startRow} AND #{paging.endRow}
+	</select>
+
+	
+	<select id="selectSystemReport" resultType="kr.or.ddit.notication.vo.ReportVO">
+		SELECT   
+		    REPORT.REPORT_ID,
+		    (SELECT USER_NAME FROM USERS WHERE USERS.USER_ID = REPORT.REPORTER_ID) AS REPORT_USER_NAME,
+			(SELECT USER_NAME FROM USERS WHERE USERS.USER_ID = REPORT.REPORTED_ID) AS REPORTER_USER_NAME,
+			REPORTED_ID,
+		    REPORT.ADMIN_ID,
+		    REPORT.REPORT_PJ_POST_ID,
+		    REPORT.REPORT_PJ_ID,
+		    REPORT.REPORT_DT,
+		    REPORT.REPORT_TITLE,
+		    REPORT.REPORT_CONTENT,
+		    REPORT.REPORT_AFI,
+		    REPORT.REPORT_CATE_CODE,
+		    REPORT.REPORT_ST_CODE,
+		    REPORT.REPORT_PENALTY_REASON,
+		    REPORT.REPORT_HANDLED_DT,
+		    CODE.CODE_NAME
+		FROM REPORT
+		INNER JOIN USERS ON USERS.USER_ID = REPORT.REPORTER_ID  
+		INNER JOIN CODE ON CODE.CODE_ID = USERS.USER_ST_CODE 
+		WHERE REPORT.REPORT_ID = #{reportId}
+	
+	
+	</select>
+	
+		
+	<update id="updateSystemReport">
+	  UPDATE REPORT
+		 SET
+		  REPORT_ST_CODE = 'Y',
+		  REPORT_PENALTY_REASON = #{reportPenaltyReason},
+		  REPORT_HANDLED_DT = SYSDATE
+	  WHERE REPORT_ID = #{reportId}
+	</update>
+	
+	
+	<update id="updateSystemReport2">
+	 	UPDATE USERS
+	 		SET
+	 		USER_ST_CODE = 'U0103'
+	 	WHERE USER_ID = #{reportedId}
+	</update>
+	
+	<update id="updateSystemReport3">
+	 	UPDATE USERS
+	 		SET
+	 		USER_ST_CODE = 'U0101'
+	 	WHERE USER_ID = #{reportedId}
+	</update>
+
+	
+
+
+
+
+</mapper>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.notication.alert.mapper.AlertMapper">
+
+	<sql id="alertColunms">
+		ALERT_ID
+		, USER_ID
+		, ALERT_TITLE
+		, ALERT_READ_ST_CODE
+		, ALERT_DT
+		, RESOURCE_URI_ADDR
+		, ENTITY_ID
+	</sql>
+
+	<insert id="insertAlert" useGeneratedKeys="true" parameterType="kr.or.ddit.notication.vo.AlertVO" keyProperty="alertId" keyColumn="ALERT_ID">
+		INSERT INTO ALERT (
+		    ALERT_ID,
+		    USER_ID,
+		    ALERT_TITLE,
+		    ALERT_READ_ST_CODE,
+		    ALERT_DT,
+		    RESOURCE_URI_ADDR,
+		    ENTITY_ID
+		) VALUES (
+		     'IS' || TO_CHAR(SYSDATE, 'YYMMDD') ||LPAD(ALERT_SEQ.NEXTVAL, 6, '0')
+		    , #{userId,jdbcType=VARCHAR}
+		    , #{alertTitle,jdbcType=VARCHAR}
+		    , 'N'
+		    , SYSDATE
+		    , #{resourceUriAddr,jdbcType=VARCHAR}
+		    , #{entityId,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<insert id="insertAlerts" parameterType="list" useGeneratedKeys="true" keyProperty="alertId">
+		INSERT INTO ALERT (
+		    ALERT_ID,
+		    USER_ID,
+		    ALERT_TITLE,
+		    ALERT_READ_ST_CODE,
+		    ALERT_DT,
+		    RESOURCE_URI_ADDR,
+		    ENTITY_ID
+		) VALUES 
+			
+		<foreach collection="list" item="a" separator=",">
+		(
+		     'IS' || TO_CHAR(SYSDATE, 'YYMMDD') ||LPAD(ALERT_SEQ.NEXTVAL, 6, '0')
+		    , #{a.userId,jdbcType=VARCHAR}
+		    , #{a.alertTitle,jdbcType=VARCHAR}
+		    , 'N'
+		    , #{a.alertDt,jdbcType=DATE}
+		    , #{a.resourceUriAddr,jdbcType=VARCHAR}
+		    , #{a.entityId,jdbcType=VARCHAR}
+		)
+		</foreach>
+	</insert>
+	
+	<select id="selectAlertList" resultType="kr.or.ddit.notication.vo.AlertVO">
+		SELECT
+			<include refid="alertColunms"/>
+		FROM ALERT
+		WHERE USER_ID = #{userId}
+		AND ALERT_READ_ST_CODE = 'N'
+		ORDER BY alert_dt DESC
+	</select>
+</mapper>

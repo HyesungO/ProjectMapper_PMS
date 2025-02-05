@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.chat.tchat.mapper.TchatMapper">
+
+
+	<resultMap type="kr.or.ddit.chat.vo.TchatVO" id="tchatMap" autoMapping="true">
+		
+	</resultMap>
+	
+	<select id="selectTchatList" resultMap="tchatMap">
+	SELECT
+	    A.TCHAT_ID,
+	    A.TCHAT_WRITER_ID,
+	    A.TCHAT_CONTENT,
+	    A.TCHAT_DT,
+	    A.TCHAT_ROOM_ID,
+	    A.TCHAT_ACTION,
+        B.USER_NAME,
+        B.USER_PROFILE_AFI,
+        C.FILE_NAME
+	FROM
+	    TCHAT A
+        INNER JOIN USERS B ON (A.TCHAT_WRITER_ID = B.USER_ID)
+        LEFT OUTER JOIN ATCH_FILE_DETAIL C ON (B.USER_PROFILE_AFI = C.ATCH_FILE_ID)
+	WHERE TCHAT_ROOM_ID = #{tchatRoomId}
+	ORDER BY TCHAT_DT ASC
+	</select>
+	
+	
+	<insert id="insertTchat">
+	<selectKey order="BEFORE" keyProperty="tchatvo.tchatId" resultType="string">
+    SELECT 'TC' || LPAD(
+      NVL(MAX(TO_NUMBER(SUBSTR(TCHAT_ID, 3, 6))), 0) + 1, 6, '0') AS TCHAT_ID
+    FROM TCHAT
+    WHERE TCHAT_ID LIKE 'TC%'
+  </selectKey>
+	INSERT INTO tchat (
+	    tchat_id,
+	    tchat_writer_id,
+	    tchat_content,
+	    tchat_dt,
+	    tchat_room_id,
+	    tchat_action
+	) VALUES (
+	  #{tchatvo.tchatId,jdbcType=VARCHAR}
+	, #{tchatvo.tchatWriterId,jdbcType=VARCHAR}
+	, #{tchatvo.tchatContent,jdbcType=VARCHAR}
+	, SYSDATE
+	, #{tchatvo.tchatRoomId,jdbcType=VARCHAR}
+	, #{tchatvo.tchatAction,jdbcType=VARCHAR}
+	
+	)
+	
+	</insert>
+	<insert id="updateENTMsg">
+	  <selectKey order="BEFORE" keyProperty="tchatId" resultType="string">
+	    SELECT 'TC' || LPAD(
+	      NVL(MAX(TO_NUMBER(SUBSTR(TCHAT_ID, 3, 6))), 0) + 1, 6, '0') AS TCHAT_ID
+	    FROM TCHAT
+	    WHERE TCHAT_ID LIKE 'TC%'
+	  </selectKey>
+	  INSERT INTO tchat (
+	    TCHAT_ID,
+	    TCHAT_WRITER_ID,
+	    TCHAT_DT,
+	    TCHAT_ACTION,
+	    TCHAT_ROOM_ID
+	  ) VALUES (
+	    #{tchatId,jdbcType=VARCHAR},
+	    #{userId,jdbcType=VARCHAR},
+	    SYSDATE,
+	    'ENT',
+	    #{generatedTchatRoomId,jdbcType=VARCHAR}
+	  )
+	</insert>
+
+	
+	<delete id="deleteTchat"></delete>
+</mapper>

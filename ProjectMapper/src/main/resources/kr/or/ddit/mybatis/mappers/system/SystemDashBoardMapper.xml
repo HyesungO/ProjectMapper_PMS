@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.system.dashboard.mapper.SystemDashBoardMapper">
+	
+	<select id="getReportCnt" resultType="map">
+		SELECT
+		     (SELECT count(*)
+		        FROM report
+		        WHERE report_st_code = 'Y') AS REPORTCNTY
+		    ,COUNT(*) AS REPORTCNTALL
+		FROM report
+		GROUP BY 1
+	</select>
+	
+	<select id="getBusinessCnt" resultType="map">
+		SELECT
+		     (SELECT COUNT(*)
+		        FROM users
+		        WHERE user_role = 'U0202'
+		            AND user_st_code = 'U0104') AS READYCNT
+		    ,(SELECT COUNT(*)
+		        FROM users
+		        WHERE user_role = 'U0202'
+		            AND user_st_code = 'U0101') AS ACTIVECNT
+		    ,(SELECT COUNT(*)
+		        FROM users
+		        WHERE user_role = 'U0202'
+		            AND user_st_code = 'U0103') AS BLACKCNT
+		FROM users
+		WHERE user_role = 'U0202'
+		GROUP BY 1
+	</select>
+	
+	<select id="getPjCategory" resultType="map">
+		SELECT
+		     pj_cate_name AS PJCATENAME
+		    ,B.pj_cate_id
+		    ,COUNT(A.pj_cate_id) AS PJCATECNT
+		FROM project A 
+		RIGHT JOIN project_category B ON (A.pj_cate_id = B.pj_cate_id)
+		GROUP BY pj_cate_name, B.pj_cate_id
+		ORDER BY B.pj_cate_id
+	</select>
+	
+	<select id="getPjCreadtedCnt" resultType="map">
+		SELECT
+		     TO_CHAR(pj_created_dt,'yyyy-MM') AS PJ_CREATED_DT
+		    ,COUNT(pj_created_dt) AS PJ_CNT
+		FROM project
+		WHERE pj_st_code = 'P0401'
+		    AND pj_created_dt >= ADD_MONTHS(SYSDATE,-12)
+		GROUP BY TO_CHAR(pj_created_dt,'yyyy-MM')
+		ORDER BY pj_created_dt
+	</select>
+	
+	<select id="getPjEndCnt" resultType="map">
+		SELECT
+		     NVL(TO_CHAR(pj_end_dt,'yyyy-MM'),'-') AS PJ_END_DT
+		    ,COUNT(pj_end_dt) AS PJ_CNT
+		FROM project
+		WHERE pj_st_code = 'P0402'
+		    AND pj_end_dt >= ADD_MONTHS(SYSDATE,-12)
+		    AND pj_end_dt IS NOT NULL
+		GROUP BY NVL(TO_CHAR(pj_end_dt,'yyyy-MM'),'-')
+		ORDER BY pj_end_dt
+	</select>
+	
+	<select id="readNoticeBoardList" resultType="kr.or.ddit.notication.vo.NoticeBoardVO">
+		SELECT A.*
+		FROM (
+				SELECT
+					 notice_id
+					,notice_title
+					,notice_created_dt
+				FROM notice_board
+				WHERE notice_cate_code = 'N'
+				ORDER BY notice_created_dt DESC
+			) A
+		<![CDATA[
+		WHERE ROWNUM <= 5
+		]]>
+	</select>
+	
+	<insert id="createVisit">
+		INSERT INTO visit (
+			 visit_id
+			,user_id
+			,visit_date
+		)
+		VALUES (
+			 (SELECT 'VI' || LPAD(NVL(MAX((SUBSTR(visit_id,'3'))),0)+1,6,'0')
+				FROM visit)
+			,#{userId}
+			,SYSDATE
+		)
+	</insert>
+	
+	<select id="getVisitCnt" resultType="map">
+		SELECT
+		     COUNT(*) AS CNT
+		    ,TO_CHAR(visit_date,'yyyy-MM') AS VISIT_DATE
+		FROM visit
+		WHERE visit_date >= ADD_MONTHS(SYSDATE,-12)
+		GROUP BY TO_CHAR(visit_date,'yyyy-MM')
+		ORDER BY visit_date ASC
+	</select>
+
+</mapper>
