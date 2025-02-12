@@ -26,26 +26,16 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 	
 	@Inject
 	private ProjectMemberMapper mapper;
-	@Inject
-	private UserMapper usermapper;
 	@Autowired
 	private AlertService alertService;
 	@Autowired
 	private ResourcesMapper resourceMapper;
-	@Inject
-	private ProjectRoleMapper projectRoleMapper;
 	
 
 	@Override
 	public List<ProjectMemberVO> readProjectMemberPagingList(String pjId, PaginationInfo<ProjectMemberVO> paging) {
 		paging.setTotalRecord(mapper.selectTotalRecord(pjId, paging));
 		return mapper.selectProjectMemberPagingList(pjId, paging);
-	}
-	
-	@Override
-	public ServiceResult createProjectMember(ProjectMemberVO projectMember) {
-//		ServiceResult result = ServiceResult.OK;
-		return null;
 	}
 
 	@Override
@@ -58,12 +48,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 	public ProjectMemberVO readProjectMember(String pjMemId) {
 		
 		return mapper.selectProjectMember(pjMemId);
-	}
-
-	@Override
-	public List<ProjectMemberVO> readMyProjectList(String userId) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
@@ -91,7 +75,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 		if(mapper.updateMemberRole(projectMember) > 0) {
 			AlertVO alert = new AlertVO();
 			ProjectMemberVO pmVo = mapper.selectProjectMember(projectMember.getPjMemId());
-//			ProjectRoleNameVO prnVo = 
 			alert.setUserId(pmVo.getUserId());
 			alert.setAlertTitle("회원님의 역할이 '"+pmVo.getPjName().getPjRoleName() +"'(으)로 변경되었습니다.");
 			alert.setResourceUriAddr(resourceMapper.selectUriAddr("PROJECTMEMBER"));
@@ -104,6 +87,4 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 		
 		return result;
 	}
-
-
 }
