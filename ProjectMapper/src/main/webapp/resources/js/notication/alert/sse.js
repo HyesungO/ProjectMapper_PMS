@@ -3,7 +3,6 @@ import { ProjectFetch } from '../../publicCode.js';
 
 document.addEventListener("DOMContentLoaded", async function () {
     // 로그인된 사용자 ID
-//    const userId = document.body.dataset.userId; // 사용자 ID가 body 태그에 포함되어 있다고 가정
     const alertDiv = document.querySelector("#alertDiv")
     const alertMoreBtn = document.querySelector("#alertMoreBtn")
 	console.log(alertDiv)
@@ -28,26 +27,6 @@ document.addEventListener("DOMContentLoaded", async function () {
             console.log("SSE 메시지 수신:", event.data);
             showToast("알림", event.data);
         };
-
-//        // sse 이벤트 처리
-//        eventSource.addEventListener("alert", async function (event) {
-//            console.log("커스텀 알림 수신:", event.data);
-//			try{
-//				const alertData = JSON.parse(event.data);
-//				console.log("Type of alertData: ", typeof alertData);
-//				for (const key in alertData) {
-//				    console.log(`Key: ${key}, Value: ${alertData[key]}`);
-//				}
-//				console.log("Raw Event Data: ", typeof event.data, event.data)
-//				console.log("AlertVO 객체 : ",alertData);
-//				console.log("AlertVO 객체 : ",alertData.alertTitle);
-//            	showToast("새로운 알림", alertData.alertTitle);
-//			}catch(e){
-//				console.error("Failed to parse alert message", e);
-//			}
-//			
-//			alertDiv.innerHTML = await alertPrint();
-//        });
         // 오류 처리
         eventSource.onerror = function () {
             console.error("SSE 연결 오류 발생!");

@@ -93,6 +93,4 @@ public class AlertServiceImpl implements AlertService {
 		
 		return alertMapper.selectAlertList(userId);
 	}
-	
-	
 }
