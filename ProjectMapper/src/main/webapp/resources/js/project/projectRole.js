@@ -29,10 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	if(roleDelete != null){
       roleDelete.addEventListener("click",()=>{
 		const selectedOption = roleSelect.options[roleSelect.selectedIndex];
-//		console.log(roleSelect.value())
 	    let roleId = selectedOption.dataset.roleId;
 	    let pjId = selectedOption.dataset.pjId;
-//		if(roleId == )
 	
 		console.log(roleId)
 		console.log(pjId)
@@ -108,18 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	document.querySelector('.dropdown-menu').addEventListener('click', function (event) {
     event.preventDefault(); // 기본 동작 막기
     event.stopImmediatePropagation();
-console.log("zzz")
 });
-	
-//	document.querySelector('#memberRoleUptBtn').addEventListener('click', function (event) {
-//		event.preventDefault(); // 기본 동작 막기
-//    event.stopImmediatePropagation();
-//		console.log("asdsad")
-//		})
-	
-//	memberRoleUptBtn.addEventListener("click", () => {
-//		console.log("asdsad")
-//	})
 	
 	roleSelect.addEventListener("change", async(e)=>{
 		const selectedOption = e.target.options[e.target.selectedIndex];
@@ -166,7 +153,6 @@ console.log("zzz")
 			return;
 
 		} else if (formData.get("resourceIds") == null && resp.length > 0) {
-//			alert("pjroleid만 보내서 전부 삭제 요청")
 			let resp2 = await roleFetch.delete(roleId);
 			if(resp2.success){
 				Swal.fire({

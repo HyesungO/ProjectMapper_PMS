@@ -13,9 +13,10 @@ public interface CloudResourceService {
 	/**
 	 * 클라우드에 파일, 폴더를 생성할 때 메타데이터 등록
 	 * @param cloudResource
+	 * @param isFolder - folder일 경우 true, file일 경우 false
 	 * @return
 	 */
-	public ServiceResult createCloudResource(CloudResourceVO cloudResource);
+	public ServiceResult createCloudResource(CloudResourceVO cloudResource, boolean isFolder);
 	
 	/**
 	 * 클라우드에 파일, 폴더에 대한 값 조회

@@ -262,8 +262,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 		})
 	}
 	
-			
-	
 	// 이름변경
 	if(renameBtn != null){
 		renameBtn.addEventListener("click",async()=>{
@@ -358,11 +356,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 		})
 		
 	}
-	
-	
-	
-			
-			
 	
 	// 다운로드 버튼을 눌렀을때
 	downloadBtn.addEventListener("click",async()=>{

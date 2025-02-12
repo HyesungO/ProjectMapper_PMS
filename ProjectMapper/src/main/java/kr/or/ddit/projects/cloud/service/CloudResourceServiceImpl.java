@@ -1,14 +1,15 @@
 package kr.or.ddit.projects.cloud.service;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -24,19 +25,20 @@ import kr.or.ddit.commons.enumpkg.ServiceResult;
 import kr.or.ddit.projects.cloud.mapper.CloudResourceMapper;
 import kr.or.ddit.projects.vo.CloudResourceVO;
 import lombok.extern.slf4j.Slf4j;
+import net.coobird.thumbnailator.Thumbnails;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
-import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -48,21 +50,84 @@ public class CloudResourceServiceImpl implements CloudResourceService {
 	CloudResourceMapper crMapper;
 	@Inject
 	AwsService awsService;
-	
-	@Override
-	public ServiceResult createCloudResource(CloudResourceVO cloudResource) {
-		return crMapper.insertCloudResource(cloudResource)>0 ? ServiceResult.OK : ServiceResult.FAIL;
-	}
 
+	// 폴더, 파일 생성 메소드
+	@Override
+	public ServiceResult createCloudResource(CloudResourceVO cloudResource, boolean isFolder) {
+		String bucketName = cloudResource.getCloudRootId().toLowerCase();
+		String path = cloudResource.getCloudResPath();
+		
+		try {
+//			// s3 클라이언트 생성
+			S3Client s3Client = awsService.readS3Client();
+			String keyName;
+			if (isFolder) { // 폴더 생성
+				keyName = cloudResource.getCloudResName()+"/";
+			}else { // 파일 업로드
+				String oriFileName = cloudResource.getCloudResFile().getOriginalFilename();
+				String cloudFileMimeType = cloudResource.getCloudResFile().getContentType(); // mime 타입
+				cloudResource.setCloudFileMimeType(cloudFileMimeType);
+				
+				// 파일 확장자 추출
+				String extension = "";
+				int dotIndex = oriFileName.lastIndexOf(".");
+				if (dotIndex > 0) {
+					extension = oriFileName.substring(dotIndex);
+				}
+				
+				keyName = UUID.randomUUID().toString() + extension; // AWS에 저장할때는 변환된 값을 넣는다 // 파일 명이 겹치는 경우 덮어씌워짐.
+				String cloudPath = keyName; // AWS에는 총 경로를 넣고 (cloudPath) / DB에는 최종 명(keyName)만 넣는다.
+
+				cloudResource.setCloudResName(oriFileName);
+				cloudResource.setCloudFileSize(cloudResource.getCloudResFile().getSize());
+				cloudResource.setCloudFileName(keyName);
+				
+				// 썸네일 추가(이미지 파일)
+				if(cloudFileMimeType!=null&&cloudFileMimeType.startsWith("image")) {
+					byte[] thumbnailBytes = cloudResource.getCloudResFile().getBytes();
+					
+					ByteArrayOutputStream thumbnailStream = new ByteArrayOutputStream();
+					Thumbnails.of(new ByteArrayInputStream(thumbnailBytes))
+							.size(150, 150)
+							.outputFormat("jpg")
+							.toOutputStream(thumbnailStream);
+					
+					byte[] thumbnailImage = thumbnailStream.toByteArray();
+					cloudResource.setThumbnailImage(thumbnailImage);
+				}
+			}
+			
+			// AWS S3에 업로드
+			String cloudPath = path != null ? path + keyName : keyName;
+			PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(cloudPath)
+                    .build();
+			
+			if (isFolder) { // 폴더 생성
+				s3Client.putObject(putObjectRequest, RequestBody.empty());
+			}else {	// 파일 생성
+				s3Client.putObject(putObjectRequest, RequestBody.fromBytes(cloudResource.getCloudResFile().getBytes()));
+			}
+			
+			// DB에 저장
+			cloudResource.setCloudRootId(bucketName);
+			return crMapper.insertCloudResource(cloudResource) > 0 ? ServiceResult.OK : ServiceResult.FAIL;
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+            return ServiceResult.FAIL;
+		}
+	}
+	
+	// 값 유무 체크 메소드
 	@Override
 	public CloudResourceVO readCloudResource(CloudResourceVO cloudResource) {
 		CloudResourceVO crVo = crMapper.selectCloudResource(cloudResource.getCloudResourceId());
-		if(crVo==null) {
-			return null;
-		}
-		if(!cloudResource.getCloudResName().equals(crVo.getCloudResName())) {
-			return null;			
-		}
+		
+		if (crVo == null || !Objects.equals(cloudResource.getCloudResName(), crVo.getCloudResName())) {
+	        return null;
+	    }
 		return crVo;
 	}
 
@@ -85,11 +150,11 @@ public class CloudResourceServiceImpl implements CloudResourceService {
 				String cloudResourceId = cloudResource.getCloudResourceId();
 				// 1. pk값으로 read를 먼저한다. 그리고 typeCode로 폴더인지, 파일인지 구분
 				CloudResourceVO crVo = crMapper.selectCloudResource(cloudResourceId);
+				// 존재하지 않을 경우 그냥 패스
 				if(crVo == null) {
 					allDeleteOk = false;
 					continue;
 				}
-				
 				// true면 자식이 없다 단일 삭제
 				if(crVo.isLeafFlag()) {
 					deleteOneObject(s3Client, crVo);
@@ -162,8 +227,7 @@ public class CloudResourceServiceImpl implements CloudResourceService {
 	            .key(crVo.getCloudFileName())
 	            .build());
 	}
-	
-	
+
 	// 폴더, 파일 이름 변경
 	// 단일 대상일 경우는 해당 method에서 처리 / 대상이 다수인 경우 아래 method로 처리
 	@Override
@@ -207,22 +271,6 @@ public class CloudResourceServiceImpl implements CloudResourceService {
 				result = ServiceResult.OK;
 			}
 		}
-		// 현재는 이름 변경만 신경쓰자
-		// 그렇다면 1. 부모를 바꿀꺼까진 없다
-		// 그렇다면 2. 
-		
-		// 3. 파일이면 단순 DB만 cloudResName으로만 수정하면 된다.
-//		crMapper.updateCloudResource(cloudResource) / 이 쿼리만 사용하면 됌
-		// 4. 폴더 일 경우에는 cloudResPath 를 들고오고 뒤에 /를 찾고 마지막 뎁스를 cloudResName(입력받아온)으로 수정한다.
-		// 4-1~3은 전부 위치 이동시 발생
-		// 4-1. 추가사항 발생 폴더 위치 변경시 그 해당하는 cloudParResId(변경위치 pk값을 부모값에 담아서 온다).
-		// 4-2. 폴더 아래로 들어가는 경우 pk에 해당하는 부모값을 변경하고
-		// 4-3. 최상위 폴더로 이동하는 경우 pk에 해당하는 부모값을 null로 처리한다.
-		// 4-4. 
-		// 6. aws에도 수정한다. old키와 new키 형식으로 기존의 껏을 복사해서 수정하고 기존에 데이터를 삭제하는 방식
-		// 성공해야 db도 수정
-		// 5. 그리고 db에서는 cloudResName 과 CloudFileName을 cloudResource.getCloudResName(입력 받아온 걸로) 수정
-		
 		return result;
 	}
 	
@@ -282,10 +330,7 @@ public class CloudResourceServiceImpl implements CloudResourceService {
 					if(crVo.getThumbnailImage() != null && crVo.getThumbnailImage().length > 0) {
 						crVo.setThumbnailEncoder(thumbnailEncoder(crVo.getThumbnailImage()));
 					}
-					
 				}
-				
-				
 			}
 		
 		return crList;
@@ -311,7 +356,8 @@ public class CloudResourceServiceImpl implements CloudResourceService {
 		}
 		return totalSize;
 	}
-
+	
+	// 사이드 폴더 트리구조 출력 용
 	@Override
 	public StringBuffer readSideFileList(String cloudRootId) {
 		Map<String, CloudResourceVO> resMap = crMapper.selectSideFileList(cloudRootId)
@@ -361,17 +407,7 @@ public class CloudResourceServiceImpl implements CloudResourceService {
 	                        + "       <span class=\"fa-solid fa-folder treeview-icon\"></span>" + res.getCloudResName() + "\r\n"
 	                        + "   </p>\r\n"
 	                        + "</a>");
-	    } 
-//	    else {
-//	    	// 클라우드 마임 타입으로 아이콘 처리
-//	        treeView.append("<div class=\"treeview-item\">\r\n"
-//	                + "   <a class=\"flex-1 ps-2 ms-2\" href=\"#!\">\r\n"
-//	                + "       <p class=\"treeview-text text-nowrap\">\r\n"
-//	                + "           <span class=\"treeview-icon fa-brands fa-html5\"></span>" + res.getCloudResName() + "\r\n"
-//	                + "       </p>\r\n"
-//	                + "   </a>\r\n"
-//	                + "</div>");
-//	    }
+	    }
 
 	    treeView.append("</li>");
 
@@ -387,6 +423,7 @@ public class CloudResourceServiceImpl implements CloudResourceService {
 	    }
 	}
 	
+	// 객체 이동 용 modal 창 폴더 트리 리스트 출력용
 	@Override
 	public StringBuffer readMoveModalFolderList(String cloudRootId) {
 		

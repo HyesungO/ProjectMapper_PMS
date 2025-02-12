@@ -38,23 +38,23 @@ public class ProjectRoleServiceImpl implements ProjectRoleService {
 	public ServiceResult createProjectRole(ProjectRoleVO role) {
 		ServiceResult result = ServiceResult.FAIL;
 		
-		// 기존데이터 조회
+		//1. 기존데이터 조회
 		List<ProjectRoleNameVO> roleNameList = mapper.selectProjectRoleName(role.getPjRoleId());
 		
-		// 기존데이터에서 resourceId 만 담기
+		//2. 기존데이터에서 resourceId 만 담기
 	    List<String> exResourceIds = roleNameList.stream()
 	            .map(projectRoleName -> projectRoleName.getRole().getResourceId()) // ProjectRoleVO의 resourceId 추출
 	            .collect(Collectors.toList());
 
-	    // 입력 받은 체크박스 데이터
+	    //3. 입력 받은 체크박스 데이터
 	    List<String> resourceIds = role.getResourceIds();
 
-	    // 기존 데이터에 없는 자원아이디 - insert할꺼
+	    //3-1. 2번(기존 데이터)과 3번(입력 데이터)을 비교해서 없는 자원아이디를 List로 담아놓음.  - insert할꺼
 	    List<String> insertList = resourceIds.stream()
 	            .filter(resourceId -> !exResourceIds.contains(resourceId))
 	            .collect(Collectors.toList());
 
-	    // 기존 데이터에는 있는데 입력 데이터에는 없는 경우 - delete
+	    //3-2. 2번(기존 데이터)에는 있는데 3번(입력 데이터)에는 없는 경우 삭제할 자원아이디를 List로 담아 놓음 - delete
 	    List<String> deleteList = exResourceIds.stream()
 	            .filter(existingId -> !resourceIds.contains(existingId))
 	            .collect(Collectors.toList());
@@ -108,6 +108,4 @@ public class ProjectRoleServiceImpl implements ProjectRoleService {
 		return result;
 	}
 	
-	
-
 }

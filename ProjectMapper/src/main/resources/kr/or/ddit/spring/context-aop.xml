@@ -14,6 +14,7 @@
 	<aop:aspectj-autoproxy />
 	
 	<bean class="kr.or.ddit.advice.LoggingAdvice" id="loggingAdvice"></bean>
+	<!-- 트랜젝션 관리 -->
 	<tx:advice id="txAdvice" transaction-manager="transactionManager">
 		<tx:attributes>
 			<tx:method name="read*" read-only="true"/>

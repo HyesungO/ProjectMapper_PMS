@@ -19,8 +19,7 @@ public class WorkHistoryDTO {
 	String content;		// 이슈, 업무 내용
 	String moveAddress; // 이동주소
 	String pathVariable; // 경로 변수
-	String statusType;	// 생성, 수정, 완료
-	// n : new / u : update / f : finish
+	String statusType;	// 생성, 수정, 완료 ( n : new / u : update / f : finish )
 	
 	LocalDateTime createDate; // time 얜 출력은 안하고 정렬용도
 }

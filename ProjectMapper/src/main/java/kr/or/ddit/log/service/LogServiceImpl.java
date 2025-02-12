@@ -82,17 +82,18 @@ public class LogServiceImpl implements LogService {
 			whDTOList.add(dto);
 		}
 		
+		// 날짜 순서대로 정렬
 		whDTOList.sort((dto1, dto2)->{
 			LocalDateTime ldt1 = dto1.getCreateDate();
 			LocalDateTime ldt2 = dto2.getCreateDate();
 			return ldt2.compareTo(ldt1);
 		});
 		
+		// 날짜별로 그룹ㅂ
 		Map<String, List<WorkHistoryDTO>> whDTOMap = new ConcurrentHashMap<>();
 		for (WorkHistoryDTO whd : whDTOList) {
 			String mapKey = whd.getYyyymmdd();
 			whDTOMap.computeIfAbsent(mapKey, k -> new ArrayList<>()).add(whd);
-//			whDTOMap.put(whd.getYyyymmdd(), whd); ;
 		}
 		return whDTOMap;
 	}

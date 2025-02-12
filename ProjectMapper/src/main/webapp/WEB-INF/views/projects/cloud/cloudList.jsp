@@ -56,8 +56,7 @@
 									</p>
 							</a>
 								<ul class="collapse treeview-list" id="main"
-									data-show="true">${cloudResourceList }
-
+									data-show="true">${cloudResourceList}
 								</ul>
 							</li>
 						</ul>
@@ -108,7 +107,6 @@
 							<div class="search-box col-auto d-flex gap-2">
 									<input id="searchInput" class="form-control search-input search" type="text"
 										placeholder="Search by name" aria-label="Search" />
-<!-- 										 <span class="fas fa-search search-box-icon"></span> -->
 										
 										<a id="searchBtn" class="btn btn-phoenix-secondary btn-square me-2" style="width: 60px;">
 								<span class="fas fa-search"></span>검색</a>
@@ -126,23 +124,10 @@
 										<ol class="breadcrumb mb-0" id="breadCrumb">
 											<li class="breadcrumb-item"><a
 												href="javascript:void(0);" data-dcv="">Main</a></li>
-											<!--     <li class="breadcrumb-item"><a href="javascript:void(0);"><h5>Item</h5></a></li> -->
-											<!--     <li class="breadcrumb-item"><a href="#">Item 3</a></li> -->
-											<!--     <li class="breadcrumb-item active" aria-current="page">Item 4</li> -->
 										</ol>
 									</nav>
-									<!-- 									<a href="javascript:void(0);"><h5 class="mb-0" id="mainList">Project Files</h5></a> -->
 								</div>
 								<div class="col-auto d-flex">
-<!-- 									<a -->
-<!-- 										class="border-primary text-primary btn btn-phoenix-secondary btn-square me-2" -->
-<!-- 										href="../../apps/file-manager/grid-view.html" -->
-<!-- 										data-bs-toggle="tooltip" data-bs-title="Grid view"><span -->
-<!-- 										class="fa-solid fa-table-cells-large"></span></a><a -->
-<!-- 										class="btn btn-phoenix-secondary btn-square" -->
-<!-- 										href="../../apps/file-manager/list-view.html" -->
-<!-- 										data-bs-toggle="tooltip" data-bs-title="List view"><span -->
-<!-- 										class="fa-solid fa-list"></span></a> -->
 										<select id="sortSelect"
 										class="form-select mx-2 mx-sm-3">
 										    <option value="folderFirst">기본정렬</option>
@@ -151,28 +136,17 @@
 										    <option value="sizeAsc">파일크기큰순</option>
 										    <option value="sizeDesc">파일크기작은순</option>
 									</select>
-<!-- 									<div class="form-check form-switch d-flex align-items-center"> -->
-<!-- 										<input class="form-check-input" type="checkbox" role="switch" -->
-<!-- 											id="viewAsGroup" data-bs-toggle="tooltip" -->
-<!-- 											data-bs-title="View as group" /> -->
-<!-- 									</div> -->
 								</div>
 							</div>
 						</div>
 						<div class="card-body pt-0">
 							<div class="myfiles-action-bar mx-n4 mb-4">
-<!-- 								<h6 class="mb-0 text-body-tertiary" -->
-<!-- 									id="file-manager-replace-element"></h6> -->
-
 								<div class="" id="file-manager-actions">
 									<div class="d-flex align-items-center">
 										<div class="d-flex gap-1 gap-sm-2">
 										
 								<input class="form-check-input me-4" id="checkBoxAll" type="checkbox" value="option1" />
 										</div>
-											
-<!-- 											<a class="btn btn-phoenix-secondary btn-square me-2" style="width: 90px;"> -->
-<!-- 								<span class="fas fa-download"></span>다운로드</a> -->
 												<button class="btn btn-primary px-sm-3 me-1" id="downloadBtn">
 													<span class="fas fa-download"></span>다운로드
 												</button>
@@ -221,16 +195,7 @@
 									class="col-auto px-0 px-xxl-5 border-start-xxl border-translucent"
 									data-details-container="data-details-container" style="width: 350px; display: block;">
 									
-									<div data-file-details="data-file-details" id="fileDetailDiv">
-									
-	
-</div>
-									
-									
-									
-									
-									
-									
+									<div data-file-details="data-file-details" id="fileDetailDiv"></div>
 									
 									<div class="phoenix-offcanvas-backdrop d-xxl-none"
 										data-phoenix-backdrop="data-phoenix-backdrop"></div>
